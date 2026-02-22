@@ -407,6 +407,7 @@ async function loadResults(reset = false){
     const pubmed = data.pubmed || [];
     const europepmc = data.europepmc || [];
     const datacite = data.datacite || [];
+    const zenodo = data.zenodo || [];
 
     
     const maxLength = Math.max(
@@ -417,7 +418,8 @@ async function loadResults(reset = false){
       arxiv.length,
       pubmed.length,
       europepmc.length,
-      datacite.length
+      datacite.length,
+      zenodo.length
     );
 
     for(let i = 0; i < maxLength; i++){
@@ -585,6 +587,27 @@ if(datacite[i]){
     articleUrl: item.link
   });
 }
+
+      if(zenodo[i]){
+  const item = zenodo[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "Zenodo",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: item.abstract,
+    keywords: "",
+    doi: item.doi,
+    articleUrl: item.link
+  });
+      }
       
     }
 
@@ -690,6 +713,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
