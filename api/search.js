@@ -245,6 +245,36 @@ try {
 } catch (e) {
   console.log("OpenAIRE failed");
 }
+
+    // REPEC (IDEAS)
+let repec = [];
+
+try {
+
+  const repRes = await fetch(
+    `https://ideas.repec.org/cgi-bin/htsearch?q=${q}&format=json`
+  );
+
+  const repData = await repRes.json();
+
+  const results = repData?.results || [];
+
+  repec = results.slice(0,10).map(item => ({
+    title: item.title,
+    authors: item.authors,
+    journal: item.publication,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: "",
+    doi: "",
+    link: item.url
+  }));
+
+} catch (e) {
+  console.log("RePEc failed");
+}
     
     res.status(200).json({
       crossref: crossref?.message?.items || [],
@@ -256,7 +286,8 @@ try {
       europepmc: europepmc || [],
       datacite: datacite || [],
       zenodo: zenodo || [],
-      openaire: openaire || []
+      openaire: openaire || [],
+      repec: repec || []
     });
 
   } catch (error) {
