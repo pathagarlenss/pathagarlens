@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pathagarlens</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#0a2a66;
+  --bg:#f5f7fa;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:#222;
+}
+h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
+a{text-decoration:none;color:inherit}
+
+/* Navbar same as index */
+.navbar{
+  background:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 40px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  position:sticky;
+  top:0;
+}
+.nav-left{display:flex;align-items:center;gap:18px}
+.nav-links a{margin-left:20px;font-weight:500}
+.nav-right{display:flex;align-items:center;gap:20px}
+.login-btn{
+  background:var(--primary);
+  color:white;
+  padding:8px 14px;
+  border-radius:6px;
+  font-size:14px;
+}
+
+/* Header */
+.header{
+  background:var(--primary);
+  color:white;
+  text-align:center;
+  padding:60px 20px;
+}
+.header h1{font-size:32px}
+
+/* Register Box */
+.container{
+  max-width:450px;
+  margin:50px auto;
+  padding:0 20px;
+}
+.register-box{
+  background:white;
+  padding:30px;
+  border-radius:10px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.06);
+}
+.register-box label{
+  display:block;
+  margin-top:15px;
+  font-size:14px;
+}
+.register-box input{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  border-radius:6px;
+  border:1px solid #ddd;
+}
+.register-box button{
+  width:100%;
+  margin-top:20px;
+  padding:12px;
+  background:var(--primary);
+  color:white;
+  border:none;
+  border-radius:6px;
+  font-weight:600;
+  cursor:pointer;
+}
+.extra{
+  text-align:center;
+  margin-top:15px;
+  font-size:14px;
+  color:var(--muted);
+}
+.extra a{color:var(--primary)}
+
+/* Footer */
+.footer{
+  background:var(--primary);
+  color:white;
+  padding:50px 20px;
+  margin-top:60px;
+  text-align:center;
+}
+
+@media(max-width:768px){
+  .navbar{flex-direction:column;align-items:flex-start;padding:12px 20px}
+  .nav-links{display:none}
+  .header h1{font-size:24px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="nav-left">
+    <h2>Pathagar | Lens</h2>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="journals.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <a href="login.html" class="login-btn">Login</a>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>Create Account</h1>
+</div>
+
+<!-- Register Form -->
+<div class="container">
+  <div class="register-box">
+    <form onsubmit="return registerUser(event)">
+      <label>Full Name</label>
+      <input type="text" id="name" required>
+
+      <label>Email Address</label>
+      <input type="email" id="email" required>
+
+      <label>Password</label>
+      <input type="password" id="password" required>
+
+      <label>Confirm Password</label>
+      <input type="password" id="confirmPassword" required>
+
+      <button type="submit">Register</button>
+    </form>
+
+    <div class="extra">
+      Already have an account? <a href="login.html">Login</a>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+© 2026 Pathagar Lens | All Rights Reserved | Design by Paradip Sen Roy
+</div>
+
+<script>
+function registerUser(event){
+  event.preventDefault();
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if(password !== confirmPassword){
+    alert("Passwords do not match!");
+    return false;
+  }
+
+  const user = {
+    name,
+    email,
+    password
+  };
+
+  localStorage.setItem("registeredUser", JSON.stringify(user));
+  alert("Registration successful! Please login.");
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>

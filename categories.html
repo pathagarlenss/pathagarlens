@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pathagarlens</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* =========================
+   MOBILE OPTIMIZATION
+   ========================= */
+
+@media (max-width: 768px){
+
+  /* Navbar layout fix */
+  .navbar{
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px 20px;
+  }
+
+  .nav-left{
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-links{
+    display: none;
+  }
+
+  .nav-right{
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .login-btn,
+  .admin-btn{
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* Dropdown adjust */
+  .dropdown{
+    right: 20px;
+    top: 120px;
+    min-width: 180px;
+  }
+
+  /* Hero section */
+  .hero{
+    padding: 60px 15px;
+  }
+
+  .hero h1{
+    font-size: 26px;
+    line-height: 1.3;
+  }
+
+  .hero p{
+    font-size: 14px;
+  }
+
+  /* Search area full width */
+  .search-area input{
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .search-area button{
+    width: 100%;
+  }
+
+  /* Sections spacing */
+  .section{
+    margin: 40px auto;
+  }
+
+  .section h2{
+    font-size: 22px;
+  }
+
+  /* Cards become single column */
+  .cards{
+    grid-template-columns: 1fr;
+  }
+
+  .card{
+    padding: 20px;
+  }
+
+  /* Footer stacking */
+  .footer-container{
+    grid-template-columns: 1fr;
+  }
+
+  .footer{
+    padding: 40px 15px;
+  }
+
+  .bottom{
+    font-size: 12px;
+  }
+
+}
+
+body{
+  margin:0;
+  font-family:'Inter', sans-serif;
+  background:#f4f6fa;
+  color:#222;
+}
+h1,h2,h3{
+  font-family:'Playfair Display', serif;
+}
+a{text-decoration:none;color:inherit}
+
+/* Navbar */
+.navbar{
+  background:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 40px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+.nav-left{display:flex;align-items:center;}
+.nav-links a{margin-left:20px;font-weight:500;}
+.nav-right{display:flex;align-items:center;gap:20px;}
+.login-btn{background:#0a2a66;color:white;padding:8px 14px;border-radius:6px;font-size:14px;}
+.admin-btn{background:#444;color:white;padding:8px 14px;border-radius:6px;font-size:14px;}
+.hamburger{font-size:24px;cursor:pointer;}
+
+/* Dropdown */
+.dropdown{
+  position: fixed;
+  right: 40px;
+  top: 70px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  display: none;
+  min-width: 200px;
+  z-index: 2000;
+}
+.dropdown a{
+  display:block;
+  padding:12px 15px;
+  border-bottom:1px solid #eee;
+}
+.dropdown a:hover{background:#f2f2f2}
+
+/* Header */
+.page-header{
+  background:#0a2a66;
+  color:white;
+  text-align:center;
+  padding:80px 20px;
+}
+.page-header h1{
+  margin:0;
+  font-size:42px;
+}
+.page-header p{
+  margin-top:15px;
+  font-size:16px;
+  opacity:0.9;
+}
+
+/* Filter */
+.filter-bar{
+  text-align:center;
+  margin:40px 0;
+}
+.filter-bar button{
+  margin:8px;
+  padding:8px 18px;
+  border-radius:20px;
+  border:1px solid #ddd;
+  background:white;
+  cursor:pointer;
+  font-size:14px;
+}
+.filter-bar button.active{
+  background:#0a2a66;
+  color:white;
+  border:none;
+}
+
+/* Grid */
+.section{max-width:1100px;margin:auto;padding:0 20px 60px;}
+.categories-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:25px;
+}
+.category-card{
+  background:white;
+  padding:25px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.06);
+  transition:0.3s;
+}
+.category-card:hover{
+  transform:translateY(-5px);
+}
+.category-card h3{margin-top:0}
+.category-card ul{
+  padding-left:18px;
+  font-size:14px;
+  line-height:1.7;
+}
+
+/* Footer */
+.footer{
+  background:#0a2a66;
+  color:white;
+  padding:50px 20px;
+}
+.footer-container{
+  max-width:1100px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:30px;
+}
+.footer a{display:block;margin-bottom:8px;color:#ddd;}
+.bottom{text-align:center;margin-top:30px;font-size:14px;opacity:0.8;}
+
+@media(max-width:900px){
+  .nav-links{display:none;}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="nav-left">
+    <h2>Pathagar | Lens</h2>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="journal.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+  </div>
+</div>
+
+<div class="dropdown" id="dropdownMenu">
+  <a href="profile.html">Profile</a>
+  <a href="setting.html">Settings</a>
+  <a href="reg.html">Register</a>
+  <a href="contact.html">Contact</a>
+  <a href="admin.html">Admin Panel</a>
+</div>
+
+<!-- Header -->
+<div class="page-header">
+  <h1>Research Categories</h1>
+  <p>Browse scholarly journals by discipline and research domain</p>
+</div>
+
+<!-- Filter -->
+<div class="filter-bar">
+  <button class="active" onclick="filterSelection('all', this)">All</button>
+  <button onclick="filterSelection('Technology', this)">Technology & Computing</button>
+  <button onclick="filterSelection('Natural', this)">Natural Sciences</button>
+  <button onclick="filterSelection('Social', this)">Social Sciences</button>
+  <button onclick="filterSelection('Humanities', this)">Humanities</button>
+  <button onclick="filterSelection('Life', this)">Life Sciences</button>
+  <button onclick="filterSelection('Engineering', this)">Engineering & Applied Technology</button>
+  <button onclick="filterSelection('Professional', this)">Business & Professional Studies</button>
+</div>
+
+<div class="categories-grid">
+
+  <!-- Technology & Computing -->
+
+  <div class="category-card Technology">
+    <h3>Computer Science</h3>
+    <ul>
+      <li>Artificial Intelligence</li>
+      <li>Machine Learning</li>
+      <li>Data Science</li>
+      <li>Cybersecurity</li>
+      <li>Software Engineering</li>
+    </ul>
+  </div>
+
+  <div class="category-card Technology">
+    <h3>Information Technology</h3>
+    <ul>
+      <li>Cloud Computing</li>
+      <li>Networking</li>
+      <li>Database Systems</li>
+      <li>Web Technologies</li>
+      <li>Blockchain</li>
+    </ul>
+  </div>
+
+  <div class="category-card Technology">
+    <h3>Information Systems</h3>
+    <ul>
+      <li>Enterprise Systems</li>
+      <li>Data Governance</li>
+      <li>Digital Transformation</li>
+      <li>IT Management</li>
+    </ul>
+  </div>
+
+  <!-- Natural Sciences -->
+  <div class="category-card Natural">
+    <h3>Physics</h3>
+    <ul>
+      <li>Quantum Physics</li>
+      <li>Astrophysics</li>
+      <li>Thermodynamics</li>
+      <li>Particle Physics</li>
+    </ul>
+  </div>
+
+  <div class="category-card Natural">
+    <h3>Chemistry</h3>
+    <ul>
+      <li>Organic Chemistry</li>
+      <li>Inorganic Chemistry</li>
+      <li>Analytical Chemistry</li>
+      <li>Materials Chemistry</li>
+    </ul>
+  </div>
+
+  <div class="category-card Natural">
+    <h3>Mathematics</h3>
+    <ul>
+      <li>Pure Mathematics</li>
+      <li>Applied Mathematics</li>
+      <li>Statistics</li>
+      <li>Mathematical Modelling</li>
+    </ul>
+  </div>
+
+  <div class="category-card Natural">
+    <h3>Earth & Planetary Science</h3>
+    <ul>
+      <li>Geology</li>
+      <li>Seismology</li>
+      <li>Oceanography</li>
+      <li>Meteorology</li>
+    </ul>
+  </div>
+
+  <!-- Life Sciences -->
+  <div class="category-card Life">
+    <h3>Biological Sciences</h3>
+    <ul>
+      <li>Microbiology</li>
+      <li>Zoology</li>
+      <li>Botany</li>
+      <li>Ecology</li>
+    </ul>
+  </div>
+
+  <div class="category-card Life">
+    <h3>Medical & Health Sciences</h3>
+    <ul>
+      <li>Clinical Medicine</li>
+      <li>Public Health</li>
+      <li>Pharmacology</li>
+      <li>Nursing</li>
+    </ul>
+  </div>
+
+  <div class="category-card Life">
+    <h3>Neuroscience</h3>
+    <ul>
+      <li>Cognitive Neuroscience</li>
+      <li>Brain Research</li>
+      <li>Neurobiology</li>
+      <li>Behavioral Neuroscience</li>
+    </ul>
+  </div>
+
+  <!-- Engineering -->
+  <div class="category-card Engineering">
+    <h3>Engineering</h3>
+    <ul>
+      <li>Civil Engineering</li>
+      <li>Mechanical Engineering</li>
+      <li>Electrical Engineering</li>
+      <li>Industrial Engineering</li>
+    </ul>
+  </div>
+
+  <div class="category-card Engineering">
+    <h3>Robotics & Automation</h3>
+    <ul>
+      <li>Automation Systems</li>
+      <li>Control Systems</li>
+      <li>Embedded Systems</li>
+      <li>Mechatronics</li>
+    </ul>
+  </div>
+
+  <div class="category-card Engineering">
+    <h3>Aerospace Engineering</h3>
+    <ul>
+      <li>Aerodynamics</li>
+      <li>Space Technology</li>
+      <li>Satellite Systems</li>
+      <li>Propulsion Systems</li>
+    </ul>
+  </div>
+
+  <!-- Social Sciences -->
+  <div class="category-card Social">
+    <h3>Sociology</h3>
+    <ul>
+      <li>Social Theory</li>
+      <li>Urban Studies</li>
+      <li>Demography</li>
+      <li>Social Change</li>
+    </ul>
+  </div>
+
+  <div class="category-card Social">
+    <h3>Economics</h3>
+    <ul>
+      <li>Microeconomics</li>
+      <li>Macroeconomics</li>
+      <li>Development Economics</li>
+      <li>International Trade</li>
+    </ul>
+  </div>
+
+  <div class="category-card Social">
+    <h3>Political Science</h3>
+    <ul>
+      <li>International Relations</li>
+      <li>Public Policy</li>
+      <li>Governance</li>
+      <li>Comparative Politics</li>
+    </ul>
+  </div>
+
+  <div class="category-card Social">
+    <h3>Psychology</h3>
+    <ul>
+      <li>Clinical Psychology</li>
+      <li>Cognitive Science</li>
+      <li>Behavioral Studies</li>
+      <li>Developmental Psychology</li>
+    </ul>
+  </div>
+
+  <!-- Humanities -->
+  <div class="category-card Humanities">
+    <h3>History</h3>
+    <ul>
+      <li>Modern History</li>
+      <li>Ancient Civilizations</li>
+      <li>World History</li>
+      <li>Historical Research</li>
+    </ul>
+  </div>
+
+  <div class="category-card Humanities">
+    <h3>Philosophy</h3>
+    <ul>
+      <li>Ethics</li>
+      <li>Metaphysics</li>
+      <li>Logic</li>
+      <li>Political Philosophy</li>
+    </ul>
+  </div>
+
+  <div class="category-card Humanities">
+    <h3>Literature & Language</h3>
+    <ul>
+      <li>Linguistics</li>
+      <li>Comparative Literature</li>
+      <li>Translation Studies</li>
+      <li>Critical Theory</li>
+    </ul>
+  </div>
+
+  <!-- Business & Applied -->
+  <div class="category-card Professional">
+    <h3>Business & Management</h3>
+    <ul>
+      <li>Finance</li>
+      <li>Marketing</li>
+      <li>Entrepreneurship</li>
+      <li>Strategic Management</li>
+    </ul>
+  </div>
+
+  <div class="category-card Professional">
+    <h3>Law & Legal Studies</h3>
+    <ul>
+      <li>Constitutional Law</li>
+      <li>International Law</li>
+      <li>Corporate Law</li>
+      <li>Human Rights</li>
+    </ul>
+  </div>
+
+  <div class="category-card Professional">
+    <h3>Education</h3>
+    <ul>
+      <li>Higher Education</li>
+      <li>Curriculum Studies</li>
+      <li>Educational Policy</li>
+      <li>Instructional Design</li>
+    </ul>
+  </div>
+
+  <div class="category-card Professional">
+    <h3>Library & Information Science</h3>
+    <ul>
+      <li>Knowledge Organization</li>
+      <li>Digital Libraries</li>
+      <li>Information Retrieval</li>
+      <li>Bibliometrics</li>
+    </ul>
+  </div>
+
+  <div class="category-card Professional">
+    <h3>Environmental Science</h3>
+    <ul>
+      <li>Climate Change</li>
+      <li>Sustainability</li>
+      <li>Renewable Energy</li>
+      <li>Environmental Policy</li>
+    </ul>
+  </div>
+
+</div>
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-container">
+    <div>
+      <h4>Pathagar | Lens</h4>
+      <p>A unified academic journal discovery platform built for researchers and students.</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <a href="index.html">Home</a>
+      <a href="journal.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div>
+      <h4>_____</h4>
+      <a href="#">API Access</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="about.html">About</a>
+
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p>Email: pathagarlens@yahoo.com</p>
+      <p>Cooch Behar, West Bengal, India (This is not the official address.)</p>
+    </div>
+  </div>
+
+  <div class="bottom">
+    © 2026 Pathagar Lens | All Rights Reserved | Design by Paradip Sen Roy
+  </div>
+</div>
+
+<script>
+function toggleMenu(){
+  var menu = document.getElementById("dropdownMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+document.addEventListener("click", function(event){
+  var menu = document.getElementById("dropdownMenu");
+  var hamburger = document.querySelector(".hamburger");
+  if(!menu.contains(event.target) && !hamburger.contains(event.target)){
+    menu.style.display = "none";
+  }
+});
+
+function filterSelection(category, btn){
+  let cards = document.querySelectorAll(".category-card");
+  let buttons = document.querySelectorAll(".filter-bar button");
+
+  buttons.forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  cards.forEach(card => {
+    if(category === "all"){
+      card.style.display = "block";
+    } else {
+      if(card.classList.contains(category)){
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

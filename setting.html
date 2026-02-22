@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pathagarlens</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#0a2a66;
+  --bg:#f4f6fa;
+}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+}
+h1,h2{font-family:'Playfair Display',serif;margin:0}
+a{text-decoration:none;color:inherit}
+
+/* Navbar */
+.navbar{
+  background:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 40px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+}
+.login-btn{
+  background:var(--primary);
+  color:white;
+  padding:8px 14px;
+  border-radius:6px;
+  margin-left:10px;
+}
+
+/* Header */
+.header{
+  background:var(--primary);
+  color:white;
+  text-align:center;
+  padding:60px 20px;
+}
+
+/* Container */
+.container{
+  max-width:600px;
+  margin:40px auto;
+  padding:0 20px;
+}
+.card{
+  background:white;
+  padding:30px;
+  border-radius:10px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.06);
+  margin-bottom:30px;
+}
+.card input{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:6px;
+  border:1px solid #ddd;
+}
+.card button{
+  margin-top:15px;
+  padding:10px 15px;
+  background:var(--primary);
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* Footer */
+.footer{
+  background:var(--primary);
+  color:white;
+  padding:40px 20px;
+  margin-top:60px;
+  text-align:center;
+}
+
+@media(max-width:768px){
+  .navbar{flex-direction:column;align-items:flex-start;padding:12px 20px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <h2>Pathagar | Lens</h2>
+  <div id="authArea"></div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>Account Settings</h1>
+</div>
+
+<div class="container">
+
+  <!-- Profile Update -->
+  <div class="card">
+    <h2>Update Profile</h2>
+    <input type="text" id="name" placeholder="Full Name">
+    <input type="email" id="email" placeholder="Email Address">
+    <button onclick="updateProfile()">Update Profile</button>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card">
+    <h2>Change Password</h2>
+    <input type="password" id="currentPassword" placeholder="Current Password">
+    <input type="password" id="newPassword" placeholder="New Password">
+    <button onclick="changePassword()">Change Password</button>
+  </div>
+
+</div>
+
+<div class="footer">
+© 2026 Pathagar Lens | All Rights Reserved | Design by Paradip Sen Roy
+</div>
+
+<script>
+/* Protect page */
+document.addEventListener("DOMContentLoaded", function(){
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if(!user){
+    window.location.href = "login.html";
+  } else {
+    document.getElementById("name").value = user.name;
+    document.getElementById("email").value = user.email;
+  }
+});
+
+/* Navbar dynamic */
+function updateNavbar(){
+  const authArea = document.getElementById("authArea");
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  if(user){
+    authArea.innerHTML = `
+      <a href="index.html" class="login-btn">HOME</a>
+      <a href="profile.html" class="login-btn">Profile</a>
+      <a href="index.html" onclick="logout()" class="login-btn" style="background:#444;">Logout</a>
+    `;
+  }
+}
+
+function logout(){
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "index.html";
+}
+
+updateNavbar();
+
+/* Update Profile */
+function updateProfile(){
+  let user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  const newName = document.getElementById("name").value;
+  const newEmail = document.getElementById("email").value;
+
+  user.name = newName;
+  user.email = newEmail;
+
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+  localStorage.setItem("registeredUser", JSON.stringify(user));
+
+  alert("Profile updated successfully!");
+}
+
+/* Change Password */
+function changePassword(){
+  let user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  const current = document.getElementById("currentPassword").value;
+  const newPass = document.getElementById("newPassword").value;
+
+  if(current !== user.password){
+    alert("Current password is incorrect!");
+    return;
+  }
+
+  user.password = newPass;
+
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+  localStorage.setItem("registeredUser", JSON.stringify(user));
+
+  alert("Password changed successfully!");
+}
+</script>
+
+</body>
+</html>

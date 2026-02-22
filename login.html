@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pathagarlens</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#0a2a66;
+  --bg:#f5f7fa;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:#222;
+}
+h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
+a{text-decoration:none;color:inherit}
+
+/* Navbar - same as index */
+.navbar{
+  background:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 40px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  position:sticky;
+  top:0;
+}
+.nav-left{display:flex;align-items:center;gap:18px}
+.nav-links a{margin-left:20px;font-weight:500}
+.nav-right{display:flex;align-items:center;gap:20px}
+.login-btn{
+  background:var(--primary);
+  color:white;
+  padding:8px 14px;
+  border-radius:6px;
+  font-size:14px;
+}
+.hamburger{font-size:22px;cursor:pointer}
+
+/* Dropdown */
+.dropdown{
+  position:fixed;
+  right:40px;
+  top:70px;
+  background:white;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  border-radius:6px;
+  display:none;
+  min-width:200px;
+}
+.dropdown a{display:block;padding:12px 15px;border-bottom:1px solid #eee}
+
+/* Header */
+.header{
+  background:var(--primary);
+  color:white;
+  text-align:center;
+  padding:60px 20px;
+}
+.header h1{font-size:32px}
+
+/* Login Box */
+.container{
+  max-width:450px;
+  margin:50px auto;
+  padding:0 20px;
+}
+.login-box{
+  background:white;
+  padding:30px;
+  border-radius:10px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.06);
+}
+.login-box label{
+  display:block;
+  margin-top:15px;
+  font-size:14px;
+}
+.login-box input{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  border-radius:6px;
+  border:1px solid #ddd;
+}
+.login-box button{
+  width:100%;
+  margin-top:20px;
+  padding:12px;
+  background:var(--primary);
+  color:white;
+  border:none;
+  border-radius:6px;
+  font-weight:600;
+  cursor:pointer;
+}
+.extra{
+  text-align:center;
+  margin-top:15px;
+  font-size:14px;
+  color:var(--muted);
+}
+.extra a{color:var(--primary)}
+
+/* Footer same */
+.footer{
+  background:var(--primary);
+  color:white;
+  padding:50px 20px;
+  margin-top:60px;
+}
+.footer-container{
+  max-width:1100px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:30px;
+}
+.footer a{display:block;margin-bottom:8px;color:#ddd}
+.bottom{text-align:center;margin-top:30px;font-size:14px;opacity:0.8}
+
+/* Mobile */
+@media(max-width:768px){
+  .navbar{flex-direction:column;align-items:flex-start;padding:12px 20px}
+  .nav-links{display:none}
+  .nav-right{width:100%;justify-content:space-between;margin-top:10px}
+  .header h1{font-size:24px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="nav-left">
+    <h2>Pathagar | Lens</h2>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="journal.html.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <a href="login.html" class="login-btn">Login</a>
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+  </div>
+</div>
+
+<!-- Dropdown -->
+<div class="dropdown" id="dropdownMenu">
+  <a href="profile.html">Profile</a>
+  <a href="setting.html">Settings</a>
+  <a href="reg.html">Register</a>
+  <a href="contact.html">Contact</a>
+  <a href="admin.html">Admin Panel</a>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>User Login</h1>
+</div>
+
+<!-- Login Form -->
+<div class="container">
+  <div class="login-box">
+    <form onsubmit="return loginUser(event)">
+      <label>Email Address</label>
+      <input type="email" id="email" required>
+
+      <label>Password</label>
+      <input type="password" id="password" required>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="extra">
+      Don’t have an account? <a href="reg.html" onclick="registerUser()">Register</a>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-container">
+    <div>
+      <h4>Pathagar | Lens</h4>
+      <p>A unified academic journal discovery platform built for researchers and students.</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <a href="index.html">Home</a>
+      <a href="journal.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div>
+      <h4>_____</h4>
+      <a href="#">API Access</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="about.html">About</a>
+
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p>Email: pathagarlens@yahoo.com</p>
+      <p>Cooch Behar, West Bengal, India (This is not the official address.)</p>
+    </div>
+  </div>
+
+  <div class="bottom">
+    © 2026 Pathagar Lens | All Rights Reserved | Design by Paradip Sen Roy
+  </div>
+</div>
+
+<script>
+function toggleMenu(){
+  var menu = document.getElementById("dropdownMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+document.addEventListener("click", function(event){
+  var menu = document.getElementById("dropdownMenu");
+  var hamburger = document.querySelector(".hamburger");
+  if(!menu.contains(event.target) && !hamburger.contains(event.target)){
+    menu.style.display = "none";
+  }
+});
+
+
+function loginUser(event){
+  event.preventDefault();
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const savedUser = JSON.parse(localStorage.getItem("registeredUser"));
+
+  if(!savedUser){
+    alert("No registered account found. Please register first.");
+    return false;
+  }
+
+  if(savedUser.email === email && savedUser.password === password){
+    localStorage.setItem("loggedInUser", JSON.stringify(savedUser));
+    alert("Login successful!");
+    window.location.href = "index.html";
+  } else {
+    alert("Invalid email or password!");
+  }
+}
+</script>
+</body>
+</html>

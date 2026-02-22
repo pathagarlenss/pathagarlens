@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pathagarlens</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+
+/* =========================
+   MOBILE OPTIMIZATION
+   ========================= */
+
+@media (max-width: 768px){
+
+  /* Navbar layout fix */
+  .navbar{
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px 20px;
+  }
+
+  .nav-left{
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-links{
+    display: none;
+  }
+
+  .nav-right{
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .login-btn,
+  .admin-btn{
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* Dropdown adjust */
+  .dropdown{
+    right: 20px;
+    top: 120px;
+    min-width: 180px;
+  }
+
+  /* Hero section */
+  .hero{
+    padding: 60px 15px;
+  }
+
+  .hero h1{
+    font-size: 26px;
+    line-height: 1.3;
+  }
+
+  .hero p{
+    font-size: 14px;
+  }
+
+  /* Search area full width */
+  .search-area input{
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .search-area button{
+    width: 100%;
+  }
+
+  /* Sections spacing */
+  .section{
+    margin: 40px auto;
+  }
+
+  .section h2{
+    font-size: 22px;
+  }
+
+  /* Cards become single column */
+  .cards{
+    grid-template-columns: 1fr;
+  }
+
+  .card{
+    padding: 20px;
+  }
+
+  /* Footer stacking */
+  .footer-container{
+    grid-template-columns: 1fr;
+  }
+
+  .footer{
+    padding: 40px 15px;
+  }
+
+  .bottom{
+    font-size: 12px;
+  }
+
+}
+
+body{
+  margin:0;
+  font-family:'Inter', sans-serif;
+  background:#f5f7fa;
+  color:#222;
+}
+h1,h2,h3{
+  font-family:'Playfair Display', serif;
+}
+a{
+  text-decoration:none;
+  color:inherit;
+}
+
+/* Navbar */
+.navbar{
+  background:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 40px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+.nav-left{
+  display:flex;
+  align-items:center;
+}
+.nav-links a{
+  margin-left:20px;
+  font-weight:500;
+}
+.nav-right{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+.login-btn{
+  background:#0a2a66;
+  color:white;
+  padding:8px 14px;
+  border-radius:6px;
+  font-size:14px;
+}
+.admin-btn{
+  background:#444;
+  color:white;
+  padding:8px 14px;
+  border-radius:6px;
+  font-size:14px;
+}
+.hamburger{
+  font-size:24px;
+  cursor:pointer;
+}
+
+/* Dropdown */
+.dropdown{
+  position: fixed;
+  right: 40px;
+  top: 70px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  display: none;
+  min-width: 200px;
+  z-index: 2000;
+}
+.dropdown a{
+  display:block;
+  padding:12px 15px;
+  border-bottom:1px solid #eee;
+}
+.dropdown a:hover{
+  background:#f2f2f2;
+}
+
+/* Page Header */
+.page-header{
+  background:#0a2a66;
+  color:white;
+  text-align:center;
+  padding:60px 20px;
+}
+.page-header h1{
+  margin:0;
+  font-size:38px;
+}
+
+/* Contact Section */
+.section{
+  max-width:1100px;
+  margin:60px auto;
+  padding:0 20px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+}
+
+.contact-form,
+.contact-info{
+  background:white;
+  padding:30px;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.contact-form input,
+.contact-form textarea{
+  width:100%;
+  padding:12px;
+  margin-bottom:15px;
+  border-radius:6px;
+  border:1px solid #ddd;
+  font-size:14px;
+}
+.contact-form button{
+  padding:12px 20px;
+  background:#0a2a66;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.contact-info a{
+  color:#0a2a66;
+  font-weight:500;
+}
+
+/* Footer */
+.footer{
+  background:#0a2a66;
+  color:white;
+  padding:50px 20px;
+  margin-top:60px;
+}
+.footer-container{
+  max-width:1100px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:30px;
+}
+.footer a{
+  display:block;
+  margin-bottom:8px;
+  color:#ddd;
+}
+.bottom{
+  text-align:center;
+  margin-top:30px;
+  font-size:14px;
+  opacity:0.8;
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .section{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="nav-left">
+    <h2>Pathagar | Lens</h2>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="journal.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+  </div>
+</div>
+
+<!-- Dropdown -->
+<div class="dropdown" id="dropdownMenu">
+  <a href="profile.html">Profile</a>
+  <a href="setting.html">Settings</a>
+  <a href="reg.html">Register</a>
+  <a href="contact.html">Contact</a>
+  <a href="admin.html">Admin Panel</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Contact Us</h1>
+  <p>We’re here to assist researchers and institutions</p>
+</div>
+
+<!-- Contact Section -->
+<div class="section">
+
+  <div class="contact-form">
+    <h2>Send a Message</h2>
+    <input type="text" placeholder="Full Name">
+    <input type="email" placeholder="Email Address">
+    <textarea rows="5" placeholder="Your Message"></textarea>
+    <button>Submit</button>
+  </div>
+
+  <div class="contact-info">
+    <h2>Contact Information</h2>
+    <p><strong>Email:</strong> 
+       <a href="mailto:pathagarlens@yahoo.com">
+         pathagarlens@yahoo.com
+       </a>
+    </p>
+    <p><strong>Location:</strong> Cooch Behar, West Bengal, India (This is not the official address.)</p>
+    <p><strong>Support Hours:</strong> Monday – Friday, 11 AM – 6 PM</p>
+    <p>If you have institutional queries, partnership requests or technical issues, feel free to reach out.</p>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-container">
+    <div>
+      <h4>Pathagar | Lens</h4>
+      <p>A unified academic journal discovery platform built for researchers and students.</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <a href="index.html">Home</a>
+      <a href="journal.html">Journals</a>
+      <a href="categories.html">Categories</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div>
+      <h4>_____</h4>
+      <a href="#">API Access</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="about.html">About</a>
+
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p>Email: pathagarlens@yahoo.com</p>
+      <p>Cooch Behar, West Bengal, India (This is not the official address.)</p>
+    </div>
+  </div>
+
+  <div class="bottom">
+    © 2026 Pathagar Lens | All Rights Reserved | Design by Paradip Sen Roy
+  </div>
+</div>
+
+<script>
+function toggleMenu(){
+  var menu = document.getElementById("dropdownMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+document.addEventListener("click", function(event){
+  var menu = document.getElementById("dropdownMenu");
+  var hamburger = document.querySelector(".hamburger");
+
+  if(!menu.contains(event.target) && !hamburger.contains(event.target)){
+    menu.style.display = "none";
+  }
+});
+</script>
+
+</body>
+</html>
