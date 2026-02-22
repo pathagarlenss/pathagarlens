@@ -18,9 +18,9 @@ export default async function handler(req, res) {
     );
     const openalex = await openAlexRes.json();
 
-    const semanticRes = await fetch(
-      `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year,abstract,venue,externalIds,keywords`
-    );
+   const semanticRes = await fetch(
+  `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year,abstract,url,externalIds,venue,keywords`
+);
     const semantic = await semanticRes.json();
 
     res.status(200).json({
