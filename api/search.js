@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     );
     const semantic = await semanticRes.json();
 
-    // DOAJ (SAFE BLOCK)
+    // DOAJ
     let doaj = [];
     try {
       const doajRes = await fetch(
@@ -34,81 +34,152 @@ export default async function handler(req, res) {
       );
       const doajData = await doajRes.json();
       doaj = doajData?.results || [];
-    } catch (e) {
-      console.log("DOAJ failed");
-    }
+    } catch {}
 
-// arXiv)
-    
-   let arxiv = [];
+    // ARXIV
+    let arxiv = [];
+    try {
+      const arxivRes = await fetch(
+        `https://export.arxiv.org/api/query?search_query=all:${q}&start=${offset}&max_results=10`
+      );
+      const xml = await arxivRes.text();
+      const entries = xml.split("<entry>").slice(1);
 
-try {
-  const arxivRes = await fetch(
-    `https://export.arxiv.org/api/query?search_query=all:${q}&start=${offset}&max_results=10`
-  );
+      arxiv = entries.map(entry => {
+        const extract = tag => {
+          const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+          return match ? match[1].replace(/\s+/g,' ').trim() : "";
+        };
 
-  const xml = await arxivRes.text();
+        const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
+          .map(a => a[1])
+          .join(", ");
 
-  const entries = xml.split("<entry>").slice(1);
-
-  arxiv = entries.map(entry => {
-
-    const extract = (tag) => {
-      const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-      return match ? match[1].replace(/\s+/g,' ').trim() : "";
-    };
-
-    const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
-      .map(a => a[1])
-      .join(", ");
-
-    return {
-      title: extract("title"),
-      abstract: extract("summary"),
-      authors: authors,
-      year: extract("published")?.substring(0,4),
-      link: extract("id")
-    };
-  });
-
-} catch (e) {
-  console.log("arXiv error");
-}
-
+        return {
+          title: extract("title"),
+          abstract: extract("summary"),
+          authors,
+          year: extract("published")?.substring(0,4),
+          link: extract("id")
+        };
+      });
+    } catch {}
 
     // PUBMED
-let pubmed = [];
+    let pubmed = [];
+    try {
+      const searchRes = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${q}&retmax=10&retstart=${offset}&retmode=json`
+      );
+      const searchData = await searchRes.json();
+      const ids = searchData?.esearchresult?.idlist || [];
 
-try {
-  // Step 1: search
-  const searchRes = await fetch(
-    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${q}&retmax=10&retstart=${offset}&retmode=json`
-  );
+      if(ids.length > 0){
+        const fetchRes = await fetch(
+          `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`
+        );
+        const fetchData = await fetchRes.json();
 
-  const searchData = await searchRes.json();
-  const ids = searchData?.esearchresult?.idlist || [];
+        pubmed = ids.map(id => {
+          const item = fetchData.result[id];
+          return {
+            title: item.title,
+            authors: item.authors?.map(a => a.name).join(", "),
+            journal: item.fulljournalname,
+            year: item.pubdate?.substring(0,4),
+            doi: item.elocationid?.startsWith("doi:")
+              ? item.elocationid.replace("doi:","")
+              : "",
+            link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+          };
+        });
+      }
+    } catch {}
 
-  if(ids.length > 0){
+    // EUROPE PMC
+    let europepmc = [];
+    try {
+      const epmcRes = await fetch(
+        `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${q}&format=json&pageSize=10&page=${page}`
+      );
+      const epmcData = await epmcRes.json();
+      const results = epmcData?.resultList?.result || [];
 
-    // Step 2: fetch details
-    const fetchRes = await fetch(
-      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`
-    );
-
-    const fetchData = await fetchRes.json();
-
-    pubmed = ids.map(id => {
-      const item = fetchData.result[id];
-      return {
+      europepmc = results.map(item => ({
         title: item.title,
-        authors: item.authors?.map(a => a.name).join(", "),
-        journal: item.fulljournalname,
-        year: item.pubdate?.substring(0,4),
-        doi: item.elocationid?.startsWith("doi:") 
-             ? item.elocationid.replace("doi:","") 
-             : "",
-        link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
-      };
+        authors: item.authorString,
+        journal: item.journalTitle,
+        volume: item.volume,
+        issue: item.issue,
+        issn: item.issn,
+        year: item.pubYear,
+        abstract: item.abstractText,
+        doi: item.doi,
+        link: item.doi
+          ? `https://doi.org/${item.doi}`
+          : `https://europepmc.org/article/${item.source}/${item.id}`
+      }));
+    } catch {}
+
+    // DATACITE
+    let datacite = [];
+    try {
+      const dcRes = await fetch(
+        `https://api.datacite.org/dois?query=${q}&page[size]=10&page[number]=${page}`
+      );
+      const dcData = await dcRes.json();
+      const results = dcData?.data || [];
+
+      datacite = results.map(item => ({
+        title: item.attributes?.titles?.[0]?.title,
+        authors: item.attributes?.creators?.map(a => a.name).join(", "),
+        journal: item.attributes?.publisher,
+        year: item.attributes?.publicationYear,
+        abstract: item.attributes?.descriptions?.[0]?.description,
+        doi: item.attributes?.doi,
+        link: item.attributes?.url
+          ? item.attributes.url
+          : `https://doi.org/${item.attributes?.doi}`
+      }));
+    } catch {}
+
+    // ZENODO
+    let zenodo = [];
+    try {
+      const zenRes = await fetch(
+        `https://zenodo.org/api/records?q=${q}&size=10&page=${page}`
+      );
+      const zenData = await zenRes.json();
+      const hits = zenData?.hits?.hits || [];
+
+      zenodo = hits.map(item => ({
+        title: item.metadata?.title,
+        authors: item.metadata?.creators?.map(a => a.name).join(", "),
+        journal: item.metadata?.publication_type || "Zenodo Record",
+        year: item.metadata?.publication_date?.substring(0,4),
+        abstract: item.metadata?.description,
+        doi: item.metadata?.doi,
+        link: item.links?.doi || item.links?.html
+      }));
+    } catch {}
+
+    res.status(200).json({
+      crossref: crossref?.message?.items || [],
+      openalex: openalex?.results || [],
+      semantic: semantic?.data || [],
+      doaj,
+      arxiv,
+      pubmed,
+      europepmc,
+      datacite,
+      zenodo
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fetch failed" });
+  }
+}      };
     });
   }
 
