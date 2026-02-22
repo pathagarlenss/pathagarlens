@@ -1,26 +1,26 @@
 export default async function handler(req, res) {
-  const { q } = req.query;
+  const { q, page = 1 } = req.query;
 
   if (!q) {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
+  const perPage = 10;
+  const offset = (page - 1) * perPage;
+
   try {
-    // Crossref
     const crossrefRes = await fetch(
-      `https://api.crossref.org/works?query=${q}&rows=3`
+      `https://api.crossref.org/works?query=${q}&rows=${perPage}&offset=${offset}`
     );
     const crossrefData = await crossrefRes.json();
 
-    // Semantic Scholar
     const semanticRes = await fetch(
-      `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=3&fields=title,authors,year`
+      `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year`
     );
     const semanticData = await semanticRes.json();
 
-    // OpenAlex
     const openAlexRes = await fetch(
-      `https://api.openalex.org/works?search=${q}&per-page=3`
+      `https://api.openalex.org/works?search=${q}&per-page=${perPage}&page=${page}`
     );
     const openAlexData = await openAlexRes.json();
 
