@@ -80,7 +80,7 @@ try {
       openalex: openalex?.results || [],
       semantic: semantic?.data || [],
       doaj: doaj || [],
-      arxiv: arxiv.data || []
+      arxiv: arxiv || []
     });
 
   } catch (error) {
