@@ -409,6 +409,7 @@ async function loadResults(reset = false){
     const datacite = data.datacite || [];
     const zenodo = data.zenodo || [];
     const openaire = data.openaire || [];
+    const repec = data.repec || [];
 
     
     const maxLength = Math.max(
@@ -421,7 +422,8 @@ async function loadResults(reset = false){
       europepmc.length,
       datacite.length,
       zenodo.length,
-      openaire.length
+      openaire.length,
+      repec.length
     );
 
     for(let i = 0; i < maxLength; i++){
@@ -631,6 +633,28 @@ if(datacite[i]){
     articleUrl: item.link
   });
       }
+      
+if(repec[i]){
+  const item = repec[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "RePEc",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: "",
+    keywords: "",
+    doi: "",
+    articleUrl: item.link
+  });
+}
+
     }
 
     resultDiv.innerHTML += html;
@@ -735,6 +759,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
