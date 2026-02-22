@@ -548,6 +548,7 @@ function renderCard(data){
 document.getElementById("loadMoreBtn").addEventListener("click",()=>{
   if(!loading){
     currentPage++;
+    console.log("Query",query);
     loadResults();
   }
 });
@@ -584,6 +585,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
