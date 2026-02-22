@@ -75,12 +75,54 @@ try {
   console.log("arXiv error");
 }
 
+
+    // PUBMED
+let pubmed = [];
+
+try {
+  // Step 1: search
+  const searchRes = await fetch(
+    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${q}&retmax=10&retstart=${offset}&retmode=json`
+  );
+
+  const searchData = await searchRes.json();
+  const ids = searchData?.esearchresult?.idlist || [];
+
+  if(ids.length > 0){
+
+    // Step 2: fetch details
+    const fetchRes = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`
+    );
+
+    const fetchData = await fetchRes.json();
+
+    pubmed = ids.map(id => {
+      const item = fetchData.result[id];
+      return {
+        title: item.title,
+        authors: item.authors?.map(a => a.name).join(", "),
+        journal: item.fulljournalname,
+        year: item.pubdate?.substring(0,4),
+        doi: item.elocationid?.startsWith("doi:") 
+             ? item.elocationid.replace("doi:","") 
+             : "",
+        link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+      };
+    });
+  }
+
+} catch (e) {
+  console.log("PubMed failed");
+}
+
     res.status(200).json({
       crossref: crossref?.message?.items || [],
       openalex: openalex?.results || [],
       semantic: semantic?.data || [],
       doaj: doaj || [],
-      arxiv: arxiv || []
+      arxiv: arxiv || [],
+      pubmed: pubmed || []
     });
 
   } catch (error) {
