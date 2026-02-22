@@ -212,6 +212,7 @@ try {
 }
 
     // OPENAIRE
+// OPENAIRE (FIXED)
 let openaire = [];
 
 try {
@@ -226,63 +227,27 @@ try {
 
   openaire = results.map(item => {
 
-    const metadata = item.metadata?.oaf_entity?.oaf_result || {};
+    const entity = item?.metadata?.["oaf:entity"]?.["oaf:result"] || {};
 
     return {
-      title: metadata.title,
-      authors: metadata.creator,
-      journal: metadata.publisher,
+      title: entity?.title?.["$"] || "",
+      authors: entity?.creator?.map(c => c["$"]).join(", ") || "",
+      journal: entity?.publisher?.["$"] || "",
       volume: "",
       issue: "",
       issn: "",
-      year: metadata.dateofacceptance?.substring(0,4),
-      abstract: metadata.description,
-      doi: metadata.pid,
-      link: metadata.pid ? `https://doi.org/${metadata.pid}` : ""
+      year: entity?.dateofacceptance?.substring(0,4) || "",
+      abstract: entity?.description?.["$"] || "",
+      doi: entity?.pid?.["$"] || "",
+      link: entity?.pid?.["$"] 
+            ? `https://doi.org/${entity.pid["$"]}` 
+            : ""
     };
+
   });
 
 } catch (e) {
   console.log("OpenAIRE failed");
-}
-
-    // REPEC (IDEAS)
-// REPEC (SAFE)
-let repec = [];
-
-try {
-
-  const repRes = await fetch(
-    `https://ideas.repec.org/cgi-bin/htsearch?q=${q}&format=json`
-  );
-
-  const text = await repRes.text();
-
-  let repData;
-
-  try {
-    repData = JSON.parse(text);
-  } catch {
-    repData = { results: [] };
-  }
-
-  const results = repData?.results || [];
-
-  repec = results.slice(0,10).map(item => ({
-    title: item.title,
-    authors: item.authors,
-    journal: item.publication,
-    volume: "",
-    issue: "",
-    issn: "",
-    year: item.year,
-    abstract: "",
-    doi: "",
-    link: item.url
-  }));
-
-} catch (e) {
-  console.log("RePEc failed");
 }
     
     res.status(200).json({
@@ -295,8 +260,7 @@ try {
       europepmc: europepmc || [],
       datacite: datacite || [],
       zenodo: zenodo || [],
-      openaire: openaire || [],
-      repec: repec || []
+      openaire: openaire || []
     });
 
   } catch (error) {
