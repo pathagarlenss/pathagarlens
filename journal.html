@@ -400,7 +400,8 @@ async function loadResults(reset = false){
     data.crossref?.length || 0,
     data.openalex?.length || 0,
     data.semantic?.length || 0,
-    data.doaj?.length || 0
+    data.doaj?.length || 0,
+    data.arxiv?.length || 0,
   );
 
   for(let i = 0; i < maxLength; i++){
@@ -489,6 +490,28 @@ async function loadResults(reset = false){
     doi: bib.identifier?.find(id=>id.type==="doi")?.id,
     doiLink: bib.identifier?.find(id=>id.type==="doi")?.id,
     articleUrl: bib.link?.[0]?.url
+  });
+}
+
+    if(data.arxiv && data.arxiv[i]){
+  const item = data.arxiv[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "arXiv",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: item.abstract,
+    keywords: "",
+    doi: "",
+    doiLink: "",
+    articleUrl: item.link
   });
 }
   }
@@ -619,6 +642,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
