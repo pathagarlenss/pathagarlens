@@ -533,45 +533,56 @@ async function loadResults(reset = false){
   const resultDiv = document.getElementById("journalResults");
 
   try{
-    const response = await fetch(`https://pathagarlens.vercel.app/api/search?q=${query}&page=${currentPage}`);
+
+    const response = await fetch(`https://pathagarlens.app/api/search?q=${query}&page=${currentPage}`);
     const data = await response.json();
 
     let html = "";
 
-    data.crossref.forEach(item => {
-      html += `
-        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
-          <h3>${item.title ? item.title[0] : "No title"}</h3>
-          <p><strong>Source:</strong> Crossref</p>
-          <p><strong>Year:</strong> ${item.created['date-parts'][0][0]}</p>
-        </div>
-      `;
-    });
+    // Crossref safe loop
+    if(data.crossref && Array.isArray(data.crossref)){
+      data.crossref.forEach(item => {
+        html += `
+          <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+            <h3>${item.title ? item.title[0] : "No title"}</h3>
+            <p><strong>Source:</strong> Crossref</p>
+            <p><strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}</p>
+          </div>
+        `;
+      });
+    }
 
-    data.semantic.forEach(item => {
-      html += `
-        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
-          <h3>${item.title}</h3>
-          <p><strong>Source:</strong> Semantic Scholar</p>
-          <p><strong>Year:</strong> ${item.year || "N/A"}</p>
-        </div>
-      `;
-    });
+    // Semantic Scholar safe loop
+    if(data.semantic && Array.isArray(data.semantic)){
+      data.semantic.forEach(item => {
+        html += `
+          <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+            <h3>${item.title || "No title"}</h3>
+            <p><strong>Source:</strong> Semantic Scholar</p>
+            <p><strong>Year:</strong> ${item.year || "N/A"}</p>
+          </div>
+        `;
+      });
+    }
 
-    data.openalex.forEach(item => {
-      html += `
-        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
-          <h3>${item.title}</h3>
-          <p><strong>Source:</strong> OpenAlex</p>
-          <p><strong>Year:</strong> ${item.publication_year || "N/A"}</p>
-        </div>
-      `;
-    });
+    // OpenAlex safe loop
+    if(data.openalex && Array.isArray(data.openalex)){
+      data.openalex.forEach(item => {
+        html += `
+          <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+            <h3>${item.title || "No title"}</h3>
+            <p><strong>Source:</strong> OpenAlex</p>
+            <p><strong>Year:</strong> ${item.publication_year || "N/A"}</p>
+          </div>
+        `;
+      });
+    }
 
     resultDiv.innerHTML += html;
 
   }catch(error){
-    document.getElementById("journalResults").innerHTML = "Error loading results.";
+    resultDiv.innerHTML += "<p style='color:red'>Error loading results.</p>";
+    console.error(error);
   }
 }
 
@@ -584,6 +595,7 @@ loadResults(true);
 </script>
 </body>
 </html>
+
 
 
 
