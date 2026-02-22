@@ -402,27 +402,54 @@ async function loadResults(reset = false){
 
     // CROSSREF
     data.crossref.forEach(item => {
-      articleCount++;
-      const authors = item.author
-        ? item.author.map(a => a.given + " " + a.family).join(", ")
-        : "N/A";
+  articleCount++;
 
-      html += `
-        <div class="result-card">
-          <div class="result-source">#${articleCount} • Source: Crossref</div>
-          <div class="result-title">${item.title?.[0] || "No Title"}</div>
-          <div class="result-meta"><strong>Authors:</strong> ${authors}</div>
-          <div class="result-meta"><strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}</div>
-          <div class="result-meta"><strong>ISSN:</strong> ${item.ISSN ? item.ISSN.join(", ") : "N/A"}</div>
-          <div class="result-meta"><strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}</div>
-          <div class="result-meta"><strong>DOI:</strong> ${item.DOI}</div>
-          <a href="https://doi.org/${item.DOI}" target="_blank" class="read-btn">
-            Read Full Article
-          </a>
-        </div>
-      `;
-    });
+  const authors = item.author
+    ? item.author.map(a => a.given + " " + a.family).join(", ")
+    : "N/A";
 
+  html += `
+    <div class="result-card">
+      <div class="result-source">#${articleCount} • Source: Crossref</div>
+
+      <div class="result-title">
+        ${item.title?.[0] || "No Title"}
+      </div>
+
+      <div class="result-meta">
+        <strong>Authors:</strong> ${authors}
+      </div>
+
+      <div class="result-meta">
+        <strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}
+      </div>
+
+      <div class="result-meta">
+        <strong>Volume:</strong> ${item.volume || "N/A"}
+        &nbsp; | &nbsp;
+        <strong>Issue:</strong> ${item.issue || "N/A"}
+      </div>
+
+      <div class="result-meta">
+        <strong>ISSN:</strong> ${item.ISSN ? item.ISSN.join(", ") : "N/A"}
+      </div>
+
+      <div class="result-meta">
+        <strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}
+      </div>
+
+      <div class="result-meta">
+        <strong>DOI:</strong> ${item.DOI}
+      </div>
+
+      <a href="https://doi.org/${item.DOI}" 
+         target="_blank" 
+         class="read-btn">
+         Read Full Article
+      </a>
+    </div>
+  `;
+});
     // OPENALEX
     data.openalex.forEach(item => {
       articleCount++;
@@ -508,6 +535,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
