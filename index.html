@@ -294,13 +294,14 @@ a{
   <h1>Find Trusted Scholarly Journals</h1>
   <p>Search academic publications across disciplines in one unified platform</p>
   <div class="search-area">
-   <form action="journal.html" method="GET">
-  <input type="text" name="q" required>
+   <form onsubmit="return searchJournal(event)">
+  <input type="text" id="searchInput" required>
   <button type="submit">Search</button>
 </form>
+
   </div>
 </div>
-<div id="results"></div>
+<div id="searchResults"></div>
 
 
 <!-- Featured Journals -->
@@ -478,12 +479,47 @@ document.addEventListener("DOMContentLoaded", function(){
 
 });
 </script>
+</script>
 
+   <script>
+async function searchJournal(event){
+  event.preventDefault();
 
+  const query = document.getElementById("searchInput").value;
+  const resultsDiv = document.getElementById("searchResults");
 
+  resultsDiv.innerHTML = "Loading...";
+
+  try{
+    const response = await fetch(
+      "https://api.crossref.org/works?query=" + query + "&rows=5"
+    );
+
+    const data = await response.json();
+    const items = data.message.items;
+
+    let html = "";
+
+    items.forEach(item => {
+      html += `
+        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+          <h3>${item.title[0]}</h3>
+          <p><strong>Journal:</strong> ${item.container-title[0] || "N/A"}</p>
+          <p><strong>Year:</strong> ${item.created["date-parts"][0][0]}</p>
+          <p><strong>DOI:</strong> ${item.DOI}</p>
+        </div>
+      `;
+    });
+
+    resultsDiv.innerHTML = html;
+
+  }catch(error){
+    resultsDiv.innerHTML = "Error fetching data.";
+  }
+}
 </script>
 
 
-
 </body>
+
 </html>
