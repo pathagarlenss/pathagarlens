@@ -507,36 +507,32 @@ a{text-decoration:none;color:inherit}
 
 <!-- Small JS: UI behaviors only (no API calls) -->
 <script>
-async function loadResults(){
+let currentPage = 1;
+let isLoading = false;
+let currentQuery = new URLSearchParams(window.location.search).get("q");
+const resultDiv = document.getElementById("journalResults");
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const query = urlParams.get("q");
+async function loadMoreResults() {
+  if (isLoading || !currentQuery) return;
 
-  if(!query) return;
+  isLoading = true;
 
-  const resultDiv = document.getElementById("journalResults");
-  resultDiv.innerHTML = "Loading...";
-
-  try{
-
-    const response = await fetch(`/api/search?q=${query}`);
+  try {
+    const response = await fetch(`/api/search?q=${currentQuery}&page=${currentPage}`);
     const data = await response.json();
 
     let html = "";
 
-    // Crossref
     data.crossref.forEach(item => {
       html += `
         <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
           <h3>${item.title ? item.title[0] : "No title"}</h3>
           <p><strong>Source:</strong> Crossref</p>
-          <p><strong>Journal:</strong> ${item['container-title'] ? item['container-title'][0] : "N/A"}</p>
-          <p><strong>Year:</strong> ${item.created['date-parts'][0][0]}</p>
+          <p><strong>Year:</strong> ${item.created["date-parts"][0][0]}</p>
         </div>
       `;
     });
 
-    // Semantic Scholar
     data.semantic.forEach(item => {
       html += `
         <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
@@ -547,7 +543,6 @@ async function loadResults(){
       `;
     });
 
-    // OpenAlex
     data.openalex.forEach(item => {
       html += `
         <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
@@ -558,15 +553,27 @@ async function loadResults(){
       `;
     });
 
-    resultDiv.innerHTML = html;
+    resultDiv.innerHTML += html;
+    currentPage++;
+    isLoading = false;
 
-  }catch(error){
-    resultDiv.innerHTML = "Error loading results.";
+  } catch (error) {
+    console.log("Load error:", error);
+    isLoading = false;
   }
 }
 
-loadResults();
+// First load
+loadMoreResults();
+
+// Infinite scroll trigger
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+    loadMoreResults();
+  }
+});
 </script>
 </body>
 </html>
+
 
