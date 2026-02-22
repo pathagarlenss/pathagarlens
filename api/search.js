@@ -270,7 +270,7 @@ try {
     abstract: "",
     doi: "",
     link: item.url
-  }));
+  });
 
 } catch (e) {
   console.log("RePEc failed");
