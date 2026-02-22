@@ -240,7 +240,7 @@ try {
       doi: metadata.pid,
       link: metadata.pid ? `https://doi.org/${metadata.pid}` : ""
     };
-  });
+  }));
 
 } catch (e) {
   console.log("OpenAIRE failed");
