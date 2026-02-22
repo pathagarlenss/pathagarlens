@@ -179,6 +179,37 @@ try {
 } catch (e) {
   console.log("DataCite failed");
 }
+
+    // ZENODO
+let zenodo = [];
+
+try {
+
+  const zenRes = await fetch(
+    `https://zenodo.org/api/records?q=${q}&size=10&page=${page}`
+  );
+
+  const zenData = await zenRes.json();
+  const hits = zenData?.hits?.hits || [];
+
+  zenodo = hits.map(item => ({
+    title: item.metadata?.title,
+    authors: item.metadata?.creators?.map(a => a.name).join(", "),
+    journal: item.metadata?.publication_type || "Zenodo Record",
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.metadata?.publication_date?.substring(0,4),
+    abstract: item.metadata?.description,
+    doi: item.metadata?.doi,
+    link: item.links?.doi 
+          ? item.links.doi 
+          : item.links?.html
+  }));
+
+} catch (e) {
+  console.log("Zenodo failed");
+}
     
     res.status(200).json({
       crossref: crossref?.message?.items || [],
@@ -188,7 +219,8 @@ try {
       arxiv: arxiv || [],
       pubmed: pubmed || [],
       europepmc: europepmc || [],
-      datacite: datacite || []
+      datacite: datacite || [],
+      zenodo: zenodo || []
     });
 
   } catch (error) {
