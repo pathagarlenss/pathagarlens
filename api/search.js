@@ -1,6 +1,3 @@
-tatus(500).json({ error: "Fetch failed" });
-  }
-}
 export default async function handler(req, res) {
 
   const { q, page = 1 } = req.query;
@@ -11,50 +8,37 @@ export default async function handler(req, res) {
 
   try {
 
-    const [
-      crossrefRes,
-      openAlexRes,
-      semanticRes,
-      doajRes,
-      arxivRes,
-      europepmcRes,
-      dataciteRes,
-      zenRes
-    ] = await Promise.allSettled([
-
+    const requests = [
       fetch(`https://api.crossref.org/works?query=${q}&rows=${perPage}&offset=${offset}`),
-
       fetch(`https://api.openalex.org/works?search=${q}&per-page=${perPage}&page=${page}`),
-
       fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year,abstract,url,externalIds,venue,keywords`),
-
       fetch(`https://doaj.org/api/search/articles/${q}?page=${page}&pageSize=10`),
-
       fetch(`https://export.arxiv.org/api/query?search_query=all:${q}&start=${offset}&max_results=10`),
-
       fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${q}&format=json&pageSize=10&page=${page}`),
-
       fetch(`https://api.datacite.org/dois?query=${q}&page[size]=10&page[number]=${page}`),
-
       fetch(`https://zenodo.org/api/records?q=${q}&size=10&page=${page}`)
-    ]);
+    ];
 
-    // Helper safe parser
-    const safeJson = async (res) =>
-      res.status === "fulfilled" ? await res.value.json() : null;
+    const responses = await Promise.allSettled(requests);
 
-    const crossref = await safeJson(crossrefRes);
-    const openalex = await safeJson(openAlexRes);
-    const semantic = await safeJson(semanticRes);
-    const doaj = await safeJson(doajRes);
-    const europepmc = await safeJson(europepmcRes);
-    const datacite = await safeJson(dataciteRes);
-    const zenodo = await safeJson(zenRes);
+    const getJSON = async (response) => {
+      if (response.status !== "fulfilled") return null;
+      if (!response.value.ok) return null;
+      return await response.value.json().catch(() => null);
+    };
 
-    // arXiv XML parse
+    const crossref = await getJSON(responses[0]);
+    const openalex = await getJSON(responses[1]);
+    const semantic = await getJSON(responses[2]);
+    const doaj = await getJSON(responses[3]);
+    const europepmc = await getJSON(responses[5]);
+    const datacite = await getJSON(responses[6]);
+    const zenodo = await getJSON(responses[7]);
+
+    // arXiv (XML)
     let arxiv = [];
-    if (arxivRes.status === "fulfilled") {
-      const xml = await arxivRes.value.text();
+    if (responses[4].status === "fulfilled" && responses[4].value.ok) {
+      const xml = await responses[4].value.text();
       const entries = xml.split("<entry>").slice(1);
 
       arxiv = entries.map(entry => {
@@ -70,7 +54,7 @@ export default async function handler(req, res) {
         return {
           title: extract("title"),
           abstract: extract("summary"),
-          authors: authors,
+          authors,
           year: extract("published")?.substring(0,4),
           link: extract("id")
         };
@@ -82,7 +66,7 @@ export default async function handler(req, res) {
       openalex: openalex?.results || [],
       semantic: semantic?.data || [],
       doaj: doaj?.results || [],
-      arxiv: arxiv || [],
+      arxiv,
       europepmc: europepmc?.resultList?.result || [],
       datacite: datacite?.data || [],
       zenodo: zenodo?.hits?.hits || []
