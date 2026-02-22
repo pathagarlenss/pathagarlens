@@ -399,7 +399,8 @@ async function loadResults(reset = false){
   const maxLength = Math.max(
     data.crossref?.length || 0,
     data.openalex?.length || 0,
-    data.semantic?.length || 0
+    data.semantic?.length || 0,
+    data.doaj?.length || 0
   );
 
   for(let i = 0; i < maxLength; i++){
@@ -466,6 +467,30 @@ async function loadResults(reset = false){
         articleUrl: item.url
       });
     }
+
+    if(data.doaj && data.doaj[i]){
+  const item = data.doaj[i];
+  articleCount++;
+
+  const bib = item.bibjson || {};
+
+  html += renderCard({
+    number: articleCount,
+    source: "DOAJ",
+    title: bib.title,
+    authors: bib.author?.map(a=>a.name).join(", "),
+    journal: bib.journal?.title,
+    volume: bib.journal?.volume,
+    issue: bib.journal?.number,
+    issn: bib.journal?.issn?.join(", "),
+    year: bib.year,
+    abstract: bib.abstract,
+    keywords: bib.keywords?.join(", "),
+    doi: bib.identifier?.find(id=>id.type==="doi")?.id,
+    doiLink: bib.identifier?.find(id=>id.type==="doi")?.id,
+    articleUrl: bib.link?.[0]?.url
+  });
+}
   }
 
   resultDiv.innerHTML += html;
@@ -587,6 +612,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
