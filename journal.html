@@ -506,7 +506,14 @@ document.getElementById("loadMoreBtn").innerText = "Load More";
 }
 function renderCard(data){
 
-  const readLink = data.doiLink || data.articleUrl || "";
+ let readLink = "";
+
+if(data.doi){
+  readLink = "https://doi.org/" + data.doi.replace(/^https?:\/\/doi\.org\//,'');
+}
+else if(data.articleUrl){
+  readLink = data.articleUrl;
+}
 
   return `
   <div class="result-card">
@@ -563,7 +570,7 @@ function renderCard(data){
 
     ${readLink ? `
       <a href="${readLink}" target="_blank" class="read-btn">
-        Read Full Article →
+        Visit Publisher →
       </a>
     ` : ""}
 
@@ -612,6 +619,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
