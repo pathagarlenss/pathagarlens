@@ -286,6 +286,8 @@ a{text-decoration:none;color:inherit}
 
 <!-- Main container -->
 <div class="container">
+  <div id="journalResults"> </div>
+</div>
 
   <!-- Sidebar / Filters -->
   <aside class="sidebar" aria-label="Filters">
@@ -505,123 +507,66 @@ a{text-decoration:none;color:inherit}
 
 <!-- Small JS: UI behaviors only (no API calls) -->
 <script>
-/* Dropdown toggle (hamburger) */
-function toggleMenu(){
-  var menu = document.getElementById("dropdownMenu");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
+async function loadResults(){
 
-/* Close dropdown on outside click */
-document.addEventListener("click", function(event){
-  var menu = document.getElementById("dropdownMenu");
-  var hamburger = document.querySelector(".hamburger");
-  if(!menu.contains(event.target) && !hamburger.contains(event.target)){
-    menu.style.display = "none";
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
+
+  if(!query) return;
+
+  const resultDiv = document.getElementById("journalResults");
+  resultDiv.innerHTML = "Loading...";
+
+  try{
+
+    const response = await fetch(`/api/search?q=${query}`);
+    const data = await response.json();
+
+    let html = "";
+
+    // Crossref
+    data.crossref.forEach(item => {
+      html += `
+        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+          <h3>${item.title ? item.title[0] : "No title"}</h3>
+          <p><strong>Source:</strong> Crossref</p>
+          <p><strong>Journal:</strong> ${item['container-title'] ? item['container-title'][0] : "N/A"}</p>
+          <p><strong>Year:</strong> ${item.created['date-parts'][0][0]}</p>
+        </div>
+      `;
+    });
+
+    // Semantic Scholar
+    data.semantic.forEach(item => {
+      html += `
+        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+          <h3>${item.title}</h3>
+          <p><strong>Source:</strong> Semantic Scholar</p>
+          <p><strong>Year:</strong> ${item.year || "N/A"}</p>
+        </div>
+      `;
+    });
+
+    // OpenAlex
+    data.openalex.forEach(item => {
+      html += `
+        <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
+          <h3>${item.title}</h3>
+          <p><strong>Source:</strong> OpenAlex</p>
+          <p><strong>Year:</strong> ${item.publication_year || "N/A"}</p>
+        </div>
+      `;
+    });
+
+    resultDiv.innerHTML = html;
+
+  }catch(error){
+    resultDiv.innerHTML = "Error loading results.";
   }
-});
-
-/* Advanced filters toggle */
-function toggleAdvanced(){
-  var area = document.getElementById("advancedArea");
-  area.style.display = area.style.display === "block" ? "none" : "block";
 }
 
-/* Reset filters (clears inputs) */
-function resetFilters(){
-  var ids = ['f-title','f-author','f-journal','f-isbn','f-year-from','f-year-to','f-subject','f-open','f-peer','f-publisher','f-affiliation','f-language','f-keywords'];
-  ids.forEach(id => {
-    var el = document.getElementById(id);
-    if(!el) return;
-    if(el.type === 'checkbox') el.checked = false;
-    else el.value = '';
-  });
-  // update results text
-  document.getElementById('resultsInfo').textContent = 'Filters cleared — showing sample results';
-  renderResults();
-}
-
-/* Apply filters - currently works client-side on static sample data.
-   Later you will replace this function to call your backend API and pass the filter values.
-*/
-function applyFilters(){
-  // gather filter values
-  var q = document.getElementById('mainSearch').value.trim().toLowerCase();
-  var title = document.getElementById('f-title').value.trim().toLowerCase();
-  var author = document.getElementById('f-author').value.trim().toLowerCase();
-  var journal = document.getElementById('f-journal').value.trim().toLowerCase();
-  var isbn = document.getElementById('f-isbn').value.trim().toLowerCase();
-  var subj = document.getElementById('f-subject').value;
-  var openOnly = document.getElementById('f-open').checked;
-  var fromY = document.getElementById('f-year-from').value;
-  var toY = document.getElementById('f-year-to').value;
-  var keywords = document.getElementById('f-keywords').value.trim().toLowerCase();
-
-  // For now we only filter the static DOM cards by simple matching
-  var cards = document.querySelectorAll('.journal-card');
-  var visible = 0;
-  cards.forEach(card=>{
-    var txt = card.innerText.toLowerCase();
-    var keep = true;
-
-    if(q && !txt.includes(q)) keep = false;
-    if(title && !txt.includes(title)) keep = false;
-    if(author && !txt.includes(author)) keep = false;
-    if(journal && !txt.includes(journal)) keep = false;
-    if(isbn && !txt.includes(isbn)) keep = false;
-    if(subj && subj !== '' && !txt.includes(subj.toLowerCase())) keep = false;
-    if(openOnly && !txt.includes('open')) keep = false;
-    if(fromY && txt.match(/\\b(19|20)\\d{2}\\b/)){
-      // simple year check: ensure at least one year in content within range
-      var years = txt.match(/\\b(19|20)\\d{2}\\b/g) || [];
-      var foundYear=false;
-      years.forEach(y=>{ if((!fromY || parseInt(y)>=parseInt(fromY)) && (!toY || parseInt(y)<=parseInt(toY))) foundYear=true; });
-      if(!foundYear) keep=false;
-    }
-    if(keywords){
-      var kws = keywords.split(',').map(s=>s.trim()).filter(Boolean);
-      var kwOk = kws.every(k=> txt.includes(k));
-      if(!kwOk) keep=false;
-    }
-
-    card.style.display = keep ? 'grid' : 'none';
-    if(keep) visible++;
-  });
-
-  document.getElementById('resultsInfo').textContent = visible + ' result(s)';
-}
-
-/* quick search buttons */
-function quickSearch(q){
-  document.getElementById('mainSearch').value = q;
-  applyFilters();
-}
-
-/* renderResults: placeholder to re-render results when sort changed etc. */
-function renderResults(){
-  // since data is static, we simply update the info text for demo purposes
-  var sort = document.getElementById('sortBy').value;
-  var info = document.getElementById('resultsInfo').textContent;
-  document.getElementById('resultsInfo').textContent = info + ' • sorted by ' + (sort === 'relevance' ? 'relevance' : (sort==='year_desc' ? 'newest' : sort));
-}
-
-/* save button demo */
-function saveDummy(btn){
-  btn.textContent = 'Saved';
-  btn.disabled = true;
-  btn.style.opacity = 0.7;
-}
-
-/* basic keyboard: Enter in main search triggers applyFilters */
-document.getElementById('mainSearch').addEventListener('keydown', function(e){
-  if(e.key === 'Enter'){ e.preventDefault(); applyFilters(); }
-});
-
-/* Demo: initial render call */
-renderResults();
-
-
-
-
+loadResults();
 </script>
 </body>
 </html>
+
