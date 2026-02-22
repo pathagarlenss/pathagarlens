@@ -390,94 +390,89 @@ async function loadResults(reset = false){
   loading = true;
   document.getElementById("loadMoreBtn").innerText = "Loading...";
 
-  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+  const response = await fetch(window.location.origin + `/api/search?q=${query}&page=${currentPage}`);
   const data = await response.json();
 
   const resultDiv = document.getElementById("journalResults");
-
   let html = "";
 
-  for(let i = 0; i < 10; i++){
+  const maxLength = Math.max(
+    data.crossref?.length || 0,
+    data.openalex?.length || 0,
+    data.semantic?.length || 0
+  );
 
-    // CROSSREF
-   const maxLength = Math.max(
-  data.crossref.length,
-  data.openalex.length,
-  data.semantic.length
-);
+  for(let i = 0; i < maxLength; i++){
 
-for(let i = 0; i < maxLength; i++){
+    if(data.crossref && data.crossref[i]){
+      const item = data.crossref[i];
+      articleCount++;
+      html += renderCard({
+        number: articleCount,
+        source: "Crossref",
+        title: item.title?.[0],
+        authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
+        journal: item['container-title']?.[0],
+        volume: item.volume,
+        issue: item.issue,
+        issn: item.ISSN?.join(", "),
+        year: item.created?.["date-parts"]?.[0]?.[0],
+        abstract: item.abstract,
+        keywords: "",
+        doi: item.DOI,
+        doiLink: item.DOI,
+        articleUrl: item.DOI ? `https://doi.org/${item.DOI}` : ""
+      });
+    }
 
-  if(data.crossref[i]){
-    articleCount++;
-    const item = data.crossref[i];
-    html += renderCard({
-      number: articleCount,
-      source: "Crossref",
-      title: item.title?.[0],
-      authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
-      journal: item['container-title']?.[0],
-      volume: item.volume,
-      issue: item.issue,
-      issn: item.ISSN?.join(", "),
-      year: item.created?.["date-parts"]?.[0]?.[0],
-      abstract: item.abstract,
-      keywords: "",
-      doi: item.DOI,
-      doiLink: item.DOI,
-      articleUrl: item.DOI ? `https://doi.org/${item.DOI}` : ""
-    });
+    if(data.openalex && data.openalex[i]){
+      const item = data.openalex[i];
+      articleCount++;
+      html += renderCard({
+        number: articleCount,
+        source: "OpenAlex",
+        title: item.title,
+        authors: item.authorships?.map(a=>a.author.display_name).join(", "),
+        journal: item.host_venue?.display_name,
+        volume: item.biblio?.volume,
+        issue: item.biblio?.issue,
+        issn: item.host_venue?.issn_l,
+        year: item.publication_year,
+        abstract: "",
+        keywords: item.concepts?.map(c=>c.display_name).join(", "),
+        doi: item.doi,
+        doiLink: item.doi,
+        articleUrl: item.doi
+      });
+    }
+
+    if(data.semantic && data.semantic[i]){
+      const item = data.semantic[i];
+      articleCount++;
+      html += renderCard({
+        number: articleCount,
+        source: "Semantic Scholar",
+        title: item.title,
+        authors: item.authors?.map(a=>a.name).join(", "),
+        journal: item.venue,
+        volume: "",
+        issue: "",
+        issn: "",
+        year: item.year,
+        abstract: item.abstract,
+        keywords: item.keywords?.map(k=>k.name).join(", "),
+        doi: item.externalIds?.DOI,
+        doiLink: item.externalIds?.DOI,
+        articleUrl: item.url
+      });
+    }
   }
-
-  if(data.openalex[i]){
-    articleCount++;
-    const item = data.openalex[i];
-    html += renderCard({
-      number: articleCount,
-      source: "OpenAlex",
-      title: item.title,
-      authors: item.authorships?.map(a=>a.author.display_name).join(", "),
-      journal: item.host_venue?.display_name,
-      volume: item.biblio?.volume,
-      issue: item.biblio?.issue,
-      issn: item.host_venue?.issn_l,
-      year: item.publication_year,
-      abstract: "",
-      keywords: item.concepts?.map(c=>c.display_name).join(", "),
-      doi: item.doi,
-      doiLink: item.doi,
-      articleUrl: item.doi
-    });
-  }
-
-  if(data.semantic[i]){
-    articleCount++;
-    const item = data.semantic[i];
-    html += renderCard({
-      number: articleCount,
-      source: "Semantic Scholar",
-      title: item.title,
-      authors: item.authors?.map(a=>a.name).join(", "),
-      journal: item.venue,
-      volume: "",
-      issue: "",
-      issn: "",
-      year: item.year,
-      abstract: item.abstract,
-      keywords: item.keywords?.map(k=>k.name).join(", "),
-      doi: item.externalIds?.DOI,
-      doiLink: item.externalIds?.DOI,
-      articleUrl: item.url
-    });
-  }
-}
 
   resultDiv.innerHTML += html;
 
   loading = false;
   document.getElementById("loadMoreBtn").innerText = "Load More";
 }
-
 function renderCard(data){
 
   const readLink = data.doiLink || data.articleUrl || "";
@@ -556,7 +551,7 @@ document.getElementById("loadMoreBtn").addEventListener("click",()=>{
 loadResults(true);
 </script>
 <script>
-  console.log(Script Loaded");
+  console.log("Script Loaded");
     </script>
   <script>
 document.addEventListener("DOMContentLoaded", function(){
@@ -585,6 +580,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
