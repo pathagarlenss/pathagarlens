@@ -210,6 +210,41 @@ try {
 } catch (e) {
   console.log("Zenodo failed");
 }
+
+    // OPENAIRE
+let openaire = [];
+
+try {
+
+  const oaRes = await fetch(
+    `https://api.openaire.eu/search/publications?format=json&keywords=${q}&size=10&page=${page}`
+  );
+
+  const oaData = await oaRes.json();
+
+  const results = oaData?.response?.results?.result || [];
+
+  openaire = results.map(item => {
+
+    const metadata = item.metadata?.oaf_entity?.oaf_result || {};
+
+    return {
+      title: metadata.title,
+      authors: metadata.creator,
+      journal: metadata.publisher,
+      volume: "",
+      issue: "",
+      issn: "",
+      year: metadata.dateofacceptance?.substring(0,4),
+      abstract: metadata.description,
+      doi: metadata.pid,
+      link: metadata.pid ? `https://doi.org/${metadata.pid}` : ""
+    };
+  });
+
+} catch (e) {
+  console.log("OpenAIRE failed");
+}
     
     res.status(200).json({
       crossref: crossref?.message?.items || [],
@@ -220,7 +255,8 @@ try {
       pubmed: pubmed || [],
       europepmc: europepmc || [],
       datacite: datacite || [],
-      zenodo: zenodo || []
+      zenodo: zenodo || [],
+      openaire: openaire || []
     });
 
   } catch (error) {
