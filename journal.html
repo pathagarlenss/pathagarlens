@@ -405,6 +405,7 @@ async function loadResults(reset = false){
     const doaj = data.doaj || [];
     const arxiv = data.arxiv || [];
     const pubmed = data.pubmed || [];
+    const europepmc = data.europepmc || [];
 
     
     const maxLength = Math.max(
@@ -413,7 +414,8 @@ async function loadResults(reset = false){
       semantic.length,
       doaj.length,
       arxiv.length,
-      pubmed.length
+      pubmed.length,
+      europepmc.length
     );
 
     for(let i = 0; i < maxLength; i++){
@@ -539,6 +541,27 @@ async function loadResults(reset = false){
     articleUrl: item.link
   });
 }
+
+  if(europepmc[i]){
+  const item = europepmc[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "Europe PMC",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: item.volume,
+    issue: item.issue,
+    issn: item.issn,
+    year: item.year,
+    abstract: item.abstract,
+    keywords: "",
+    doi: item.doi,
+    articleUrl: item.link
+  });
+}
     }
 
     resultDiv.innerHTML += html;
@@ -643,6 +666,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
