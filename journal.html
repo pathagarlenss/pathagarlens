@@ -533,7 +533,7 @@ async function loadResults(reset = false){
   const resultDiv = document.getElementById("journalResults");
 
   try{
-    const response = await fetch(`pathagarlens.vercel.app/api/search?q=${query}&page=${currentPage}`);
+    const response = await fetch(`https://pathagarlens.vercel.app/api/search?q=${query}&page=${currentPage}`);
     const data = await response.json();
 
     let html = "";
@@ -584,6 +584,7 @@ loadResults(true);
 </script>
 </body>
 </html>
+
 
 
 
