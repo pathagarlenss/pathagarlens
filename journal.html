@@ -404,13 +404,16 @@ async function loadResults(reset = false){
     const semantic = data.semantic || [];
     const doaj = data.doaj || [];
     const arxiv = data.arxiv || [];
+    const pubmed = data.pubmed || [];
 
+    
     const maxLength = Math.max(
       crossref.length,
       openalex.length,
       semantic.length,
       doaj.length,
-      arxiv.length
+      arxiv.length,
+      pubmed.length
     );
 
     for(let i = 0; i < maxLength; i++){
@@ -516,6 +519,26 @@ async function loadResults(reset = false){
         });
       }
 
+      if(pubmed[i]){
+  const item = pubmed[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "PubMed",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: "",
+    keywords: "",
+    doi: item.doi,
+    articleUrl: item.link
+  });
+}
     }
 
     resultDiv.innerHTML += html;
@@ -620,5 +643,6 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
