@@ -227,26 +227,4 @@ try {
     console.error(error);
     res.status(500).json({ error: "Fetch failed" });
   }
-}    // -------------------------
-    // Zenodo
-    const zenodoData = zenodo?.hits?.hits || [];
-
-    // -------------------------
-
-    res.status(200).json({
-      crossref: crossref?.message?.items || [],
-      openalex: openalex?.results || [],
-      semantic: semantic?.data || [],
-      doaj,
-      arxiv,
-      pubmed,
-      europepmc: europepmcData,
-      datacite: dataciteData,
-      zenodo: zenodoData
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fetch failed" });
-  }
 }
