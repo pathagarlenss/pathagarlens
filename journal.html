@@ -286,7 +286,13 @@ a{text-decoration:none;color:inherit}
 
 <!-- Main container -->
 <div class="container">
-  <div id="journalResults"> </div>
+ <div id="journalResults"></div>
+
+<div style="text-align:center; margin:20px 0;">
+  <button id="loadMoreBtn" onclick="loadMore()" 
+    style="padding:10px 20px; background:#0a2a66; color:white; border:none; border-radius:6px; cursor:pointer;">
+    Load More
+  </button>
 </div>
 
   <!-- Sidebar / Filters -->
@@ -508,17 +514,26 @@ a{text-decoration:none;color:inherit}
 <!-- Small JS: UI behaviors only (no API calls) -->
 <script>
 let currentPage = 1;
-let isLoading = false;
-let currentQuery = new URLSearchParams(window.location.search).get("q");
-const resultDiv = document.getElementById("journalResults");
+let currentQuery = "";
 
-async function loadMoreResults() {
-  if (isLoading || !currentQuery) return;
+async function loadResults(reset = false){
 
-  isLoading = true;
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
 
-  try {
-    const response = await fetch(`/api/search?q=${currentQuery}&page=${currentPage}`);
+  if(!query) return;
+
+  if(reset){
+    currentPage = 1;
+    document.getElementById("journalResults").innerHTML = "";
+  }
+
+  currentQuery = query;
+
+  const resultDiv = document.getElementById("journalResults");
+
+  try{
+    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
     const data = await response.json();
 
     let html = "";
@@ -528,7 +543,7 @@ async function loadMoreResults() {
         <div style="background:white;padding:15px;margin:15px 0;border-radius:8px;">
           <h3>${item.title ? item.title[0] : "No title"}</h3>
           <p><strong>Source:</strong> Crossref</p>
-          <p><strong>Year:</strong> ${item.created["date-parts"][0][0]}</p>
+          <p><strong>Year:</strong> ${item.created['date-parts'][0][0]}</p>
         </div>
       `;
     });
@@ -554,26 +569,21 @@ async function loadMoreResults() {
     });
 
     resultDiv.innerHTML += html;
-    currentPage++;
-    isLoading = false;
 
-  } catch (error) {
-    console.log("Load error:", error);
-    isLoading = false;
+  }catch(error){
+    document.getElementById("journalResults").innerHTML = "Error loading results.";
   }
 }
 
-// First load
-loadMoreResults();
+function loadMore(){
+  currentPage++;
+  loadResults();
+}
 
-// Infinite scroll trigger
-window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-    loadMoreResults();
-  }
-});
+loadResults(true);
 </script>
 </body>
 </html>
+
 
 
