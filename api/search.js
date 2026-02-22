@@ -38,11 +38,56 @@ export default async function handler(req, res) {
       console.log("DOAJ failed");
     }
 
+// arXiv)
+    
+    let arxiv = [];
+
+try {
+  const arxivRes = await fetch(
+    `http://export.arxiv.org/api/query?search_query=all:${q}&start=${offset}&max_results=10`
+  );
+
+  const arxivText = await arxivRes.text();
+
+  const entries = arxivText.split("<entry>");
+
+  arxiv = entries.slice(1).map(entry => {
+
+    const getTag = (tag) => {
+      const match = entry.match(new RegExp(`<${tag}>(.*?)</${tag}>`, "s"));
+      return match ? match[1].replace(/\n/g,' ').trim() : "";
+    };
+
+    const getAuthors = () => {
+      const matches = [...entry.matchAll(/<name>(.*?)<\/name>/g)];
+      return matches.map(m => m[1]).join(", ");
+    };
+
+    return {
+      title: getTag("title"),
+      abstract: getTag("summary"),
+      authors: getAuthors(),
+      year: getTag("published")?.substring(0,4),
+      link: getTag("id"),
+      journal: "arXiv Preprint",
+      volume: "",
+      issue: "",
+      issn: "",
+      doi: ""
+    };
+
+  });
+
+} catch (e) {
+  console.log("arXiv failed");
+}
+
     res.status(200).json({
       crossref: crossref?.message?.items || [],
       openalex: openalex?.results || [],
       semantic: semantic?.data || [],
-      doaj: doaj
+      doaj: doaj || [],
+       semantic: semantic?.data || []
     });
 
   } catch (error) {
