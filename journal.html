@@ -496,13 +496,13 @@ async function loadResults(reset = false){
         });
       }
 
-      if(arxiv[i]){
+      if(data.arxiv[i]){
         const item = arxiv[i];
         articleCount++;
         html += renderCard({
           number: articleCount,
           source: "arXiv",
-          title: item.title,
+          title: item.title || "arXiv Article".
           authors: item.authors,
           journal: "arXiv Preprint",
           volume: "",
@@ -620,3 +620,4 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
