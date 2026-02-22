@@ -23,10 +23,16 @@ export default async function handler(req, res) {
 );
     const semantic = await semanticRes.json();
 
+    const doajRes = await fetch(
+  `https://doaj.org/api/search/articles/${q}?page=${page}&pageSize=10`
+);
+const doaj = await doajRes.json();
+
     res.status(200).json({
       crossref: crossref.message?.items || [],
       openalex: openalex.results || [],
       semantic: semantic.data || []
+      doaj: doaj.results || []
     });
 
   } catch (error) {
