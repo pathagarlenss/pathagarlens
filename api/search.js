@@ -240,13 +240,14 @@ try {
       doi: metadata.pid,
       link: metadata.pid ? `https://doi.org/${metadata.pid}` : ""
     };
-  }));
+  });
 
 } catch (e) {
   console.log("OpenAIRE failed");
 }
 
     // REPEC (IDEAS)
+// REPEC (SAFE)
 let repec = [];
 
 try {
@@ -255,7 +256,15 @@ try {
     `https://ideas.repec.org/cgi-bin/htsearch?q=${q}&format=json`
   );
 
-  const repData = await repRes.json();
+  const text = await repRes.text();
+
+  let repData;
+
+  try {
+    repData = JSON.parse(text);
+  } catch {
+    repData = { results: [] };
+  }
 
   const results = repData?.results || [];
 
@@ -270,7 +279,7 @@ try {
     abstract: "",
     doi: "",
     link: item.url
-  });
+  }));
 
 } catch (e) {
   console.log("RePEc failed");
