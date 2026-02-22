@@ -140,10 +140,44 @@ a{
 }
 .result-card{
   background:white;
-  padding:20px;
-  border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.06);
-  margin-bottom:20px;
+  padding:25px;
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.06);
+  margin-bottom:25px;
+}
+
+.result-title{
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:10px;
+  color:#0a2a66;
+}
+
+.result-meta{
+  font-size:14px;
+  margin-bottom:6px;
+  color:#555;
+}
+
+.result-source{
+  font-size:13px;
+  font-weight:600;
+  color:#888;
+  margin-bottom:8px;
+}
+
+.read-btn{
+  display:inline-block;
+  margin-top:10px;
+  padding:8px 16px;
+  background:#0a2a66;
+  color:white;
+  border-radius:6px;
+  font-size:14px;
+}
+
+.read-btn:hover{
+  opacity:0.9;
 }
 
 /* Load More */
@@ -301,24 +335,24 @@ document.addEventListener("click", function(event){
 });
 </script>
 
-  <script>
+<script>
 let currentPage = 1;
 let currentQuery = "";
 let loading = false;
+let articleCount = 0;
 
 async function loadResults(reset = false){
 
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
-
   if(!query) return;
 
   if(reset){
     currentPage = 1;
+    articleCount = 0;
     document.getElementById("journalResults").innerHTML = "";
   }
 
-  currentQuery = query;
   const resultDiv = document.getElementById("journalResults");
 
   loading = true;
@@ -333,40 +367,51 @@ async function loadResults(reset = false){
 
     // CROSSREF
     data.crossref.forEach(item => {
+      articleCount++;
+      const authors = item.author
+        ? item.author.map(a => a.given + " " + a.family).join(", ")
+        : "N/A";
+
       html += `
         <div class="result-card">
-          <h3>${item.title?.[0] || "No Title"}</h3>
-          <p><strong>Source:</strong> Crossref</p>
-          <p><strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}</p>
-          <p><strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}</p>
-          <p><strong>DOI:</strong> ${item.DOI}</p>
-          <p><a href="https://doi.org/${item.DOI}" target="_blank">Read Article</a></p>
+          <div class="result-source">#${articleCount} • Source: Crossref</div>
+          <div class="result-title">${item.title?.[0] || "No Title"}</div>
+          <div class="result-meta"><strong>Authors:</strong> ${authors}</div>
+          <div class="result-meta"><strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}</div>
+          <div class="result-meta"><strong>ISSN:</strong> ${item.ISSN ? item.ISSN.join(", ") : "N/A"}</div>
+          <div class="result-meta"><strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}</div>
+          <div class="result-meta"><strong>DOI:</strong> ${item.DOI}</div>
+          <a href="https://doi.org/${item.DOI}" target="_blank" class="read-btn">
+            Read Full Article
+          </a>
         </div>
       `;
     });
 
     // OPENALEX
     data.openalex.forEach(item => {
+      articleCount++;
       html += `
         <div class="result-card">
-          <h3>${item.title || "No Title"}</h3>
-          <p><strong>Source:</strong> OpenAlex</p>
-          <p><strong>Year:</strong> ${item.publication_year || "N/A"}</p>
-          <p><strong>DOI:</strong> ${item.doi || "N/A"}</p>
-          ${item.doi ? `<p><a href="${item.doi}" target="_blank">Read Article</a></p>` : ""}
+          <div class="result-source">#${articleCount} • Source: OpenAlex</div>
+          <div class="result-title">${item.title || "No Title"}</div>
+          <div class="result-meta"><strong>Year:</strong> ${item.publication_year || "N/A"}</div>
+          <div class="result-meta"><strong>DOI:</strong> ${item.doi || "N/A"}</div>
+          ${item.doi ? `<a href="${item.doi}" target="_blank" class="read-btn">Read Full Article</a>` : ""}
         </div>
       `;
     });
 
-    // SEMANTIC
+    // SEMANTIC SCHOLAR
     data.semantic.forEach(item => {
+      articleCount++;
       html += `
         <div class="result-card">
-          <h3>${item.title}</h3>
-          <p><strong>Source:</strong> Semantic Scholar</p>
-          <p><strong>Year:</strong> ${item.year || "N/A"}</p>
-          ${item.externalIds?.DOI ? `<p><strong>DOI:</strong> ${item.externalIds.DOI}</p>` : ""}
-          ${item.url ? `<p><a href="${item.url}" target="_blank">Read Article</a></p>` : ""}
+          <div class="result-source">#${articleCount} • Source: Semantic Scholar</div>
+          <div class="result-title">${item.title}</div>
+          <div class="result-meta"><strong>Year:</strong> ${item.year || "N/A"}</div>
+          ${item.externalIds?.DOI ? `<div class="result-meta"><strong>DOI:</strong> ${item.externalIds.DOI}</div>` : ""}
+          ${item.url ? `<a href="${item.url}" target="_blank" class="read-btn">Read Full Article</a>` : ""}
         </div>
       `;
     });
@@ -393,4 +438,5 @@ loadResults(true);
 
 </body>
 </html>
+
 
