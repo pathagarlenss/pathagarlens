@@ -147,6 +147,38 @@ try {
 } catch (e) {
   console.log("Europe PMC failed");
 }
+
+    // DATACITE
+let datacite = [];
+
+try {
+
+  const dcRes = await fetch(
+    `https://api.datacite.org/dois?query=${q}&page[size]=10&page[number]=${page}`
+  );
+
+  const dcData = await dcRes.json();
+
+  const results = dcData?.data || [];
+
+  datacite = results.map(item => ({
+    title: item.attributes?.titles?.[0]?.title,
+    authors: item.attributes?.creators?.map(a => a.name).join(", "),
+    journal: item.attributes?.publisher,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.attributes?.publicationYear,
+    abstract: item.attributes?.descriptions?.[0]?.description,
+    doi: item.attributes?.doi,
+    link: item.attributes?.url 
+          ? item.attributes.url 
+          : `https://doi.org/${item.attributes?.doi}`
+  }));
+
+} catch (e) {
+  console.log("DataCite failed");
+}
     
     res.status(200).json({
       crossref: crossref?.message?.items || [],
@@ -155,7 +187,8 @@ try {
       doaj: doaj || [],
       arxiv: arxiv || [],
       pubmed: pubmed || [],
-      europepmc: europepmc || []
+      europepmc: europepmc || [],
+      datacite: datacite || []
     });
 
   } catch (error) {
