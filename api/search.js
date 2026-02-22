@@ -2,35 +2,39 @@ export default async function handler(req, res) {
   const { q, page = 1 } = req.query;
 
   if (!q) {
-    return res.status(400).json({ error: "Missing query parameter" });
+    return res.status(400).json({ error: "Missing query" });
   }
 
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
   try {
+
+    // CROSSREF
     const crossrefRes = await fetch(
       `https://api.crossref.org/works?query=${q}&rows=${perPage}&offset=${offset}`
     );
-    const crossrefData = await crossrefRes.json();
+    const crossref = await crossrefRes.json();
 
-    const semanticRes = await fetch(
-      `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year`
-    );
-    const semanticData = await semanticRes.json();
-
+    // OPENALEX
     const openAlexRes = await fetch(
       `https://api.openalex.org/works?search=${q}&per-page=${perPage}&page=${page}`
     );
-    const openAlexData = await openAlexRes.json();
+    const openalex = await openAlexRes.json();
+
+    // SEMANTIC SCHOLAR
+    const semanticRes = await fetch(
+      `https://api.semanticscholar.org/graph/v1/paper/search?query=${q}&limit=${perPage}&offset=${offset}&fields=title,authors,year,url,externalIds`
+    );
+    const semantic = await semanticRes.json();
 
     return res.status(200).json({
-      crossref: crossrefData.message.items,
-      semantic: semanticData.data,
-      openalex: openAlexData.results,
+      crossref: crossref.message?.items || [],
+      openalex: openalex.results || [],
+      semantic: semantic.data || []
     });
 
   } catch (error) {
-    return res.status(500).json({ error: "API fetch failed" });
+    return res.status(500).json({ error: "Fetch failed" });
   }
 }
