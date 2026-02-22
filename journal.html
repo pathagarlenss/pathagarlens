@@ -406,115 +406,110 @@ async function loadResults(reset = false){
 
   for(let i = 0; i < maxLength; i++){
 
-    if(data.crossref && data.crossref[i]){
-      const item = data.crossref[i];
-      articleCount++;
-      html += renderCard({
-        number: articleCount,
-        source: "Crossref",
-        title: item.title?.[0],
-        authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
-        journal: item['container-title']?.[0],
-        volume: item.volume,
-        issue: item.issue,
-        issn: item.ISSN?.join(", "),
-        year: item.created?.["date-parts"]?.[0]?.[0],
-        abstract: item.abstract,
-        keywords: "",
-        doi: item.DOI,
-        doiLink: item.DOI,
-        articleUrl: item.DOI ? `https://doi.org/${item.DOI}` : ""
-      });
-    }
+    for(let i = 0; i < maxLength; i++){
 
-    if(data.openalex && data.openalex[i]){
-      const item = data.openalex[i];
-      articleCount++;
-      html += renderCard({
-        number: articleCount,
-        source: "OpenAlex",
-        title: item.title,
-        authors: item.authorships?.map(a=>a.author.display_name).join(", "),
-        journal: item.host_venue?.display_name,
-        volume: item.biblio?.volume,
-        issue: item.biblio?.issue,
-        issn: item.host_venue?.issn_l,
-        year: item.publication_year,
-        abstract: "",
-        keywords: item.concepts?.map(c=>c.display_name).join(", "),
-        doi: item.doi,
-        doiLink: item.doi,
-        articleUrl: item.doi
-      });
-    }
-
-    if(data.semantic && data.semantic[i]){
-      const item = data.semantic[i];
-      articleCount++;
-      html += renderCard({
-        number: articleCount,
-        source: "Semantic Scholar",
-        title: item.title,
-        authors: item.authors?.map(a=>a.name).join(", "),
-        journal: item.venue,
-        volume: "",
-        issue: "",
-        issn: "",
-        year: item.year,
-        abstract: item.abstract,
-        keywords: item.keywords?.map(k=>k.name).join(", "),
-        doi: item.externalIds?.DOI,
-        doiLink: item.externalIds?.DOI,
-        articleUrl: item.url
-      });
-    }
-
-    if(data.doaj && data.doaj[i]){
-  const item = data.doaj[i];
-  articleCount++;
-
-  const bib = item.bibjson || {};
-
-  html += renderCard({
-    number: articleCount,
-    source: "DOAJ",
-    title: bib.title,
-    authors: bib.author?.map(a=>a.name).join(", "),
-    journal: bib.journal?.title,
-    volume: bib.journal?.volume,
-    issue: bib.journal?.number,
-    issn: bib.journal?.issn?.join(", "),
-    year: bib.year,
-    abstract: bib.abstract,
-    keywords: bib.keywords?.join(", "),
-    doi: bib.identifier?.find(id=>id.type==="doi")?.id,
-    doiLink: bib.identifier?.find(id=>id.type==="doi")?.id,
-    articleUrl: bib.link?.[0]?.url
-  });
-}
-
-    if(data.arxiv && data.arxiv[i]){
-  const item = data.arxiv[i];
-  articleCount++;
-
-  html += renderCard({
-    number: articleCount,
-    source: "arXiv",
-    title: item.title,
-    authors: item.authors,
-    journal: item.journal,
-    volume: "",
-    issue: "",
-    issn: "",
-    year: item.year,
-    abstract: item.abstract,
-    keywords: "",
-    doi: "",
-    doiLink: "",
-    articleUrl: item.link
-  });
-}
+  if(data.crossref?.[i]){
+    const item = data.crossref[i];
+    articleCount++;
+    html += renderCard({
+      number: articleCount,
+      source: "Crossref",
+      title: item.title?.[0],
+      authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
+      journal: item['container-title']?.[0],
+      volume: item.volume,
+      issue: item.issue,
+      issn: item.ISSN?.join(", "),
+      year: item.created?.["date-parts"]?.[0]?.[0],
+      abstract: item.abstract,
+      keywords: "",
+      doi: item.DOI,
+      articleUrl: item.DOI ? `https://doi.org/${item.DOI}` : ""
+    });
   }
+
+  if(data.openalex?.[i]){
+    const item = data.openalex[i];
+    articleCount++;
+    html += renderCard({
+      number: articleCount,
+      source: "OpenAlex",
+      title: item.title,
+      authors: item.authorships?.map(a=>a.author.display_name).join(", "),
+      journal: item.host_venue?.display_name,
+      volume: item.biblio?.volume,
+      issue: item.biblio?.issue,
+      issn: item.host_venue?.issn_l,
+      year: item.publication_year,
+      abstract: "",
+      keywords: item.concepts?.map(c=>c.display_name).join(", "),
+      doi: item.doi,
+      articleUrl: item.doi
+    });
+  }
+
+  if(data.semantic?.[i]){
+    const item = data.semantic[i];
+    articleCount++;
+    html += renderCard({
+      number: articleCount,
+      source: "Semantic Scholar",
+      title: item.title,
+      authors: item.authors?.map(a=>a.name).join(", "),
+      journal: item.venue,
+      volume: "",
+      issue: "",
+      issn: "",
+      year: item.year,
+      abstract: item.abstract,
+      keywords: item.keywords?.map(k=>k.name).join(", "),
+      doi: item.externalIds?.DOI,
+      articleUrl: item.url
+    });
+  }
+
+  if(data.doaj?.[i]){
+    const item = data.doaj[i];
+    const bib = item.bibjson || {};
+    articleCount++;
+    html += renderCard({
+      number: articleCount,
+      source: "DOAJ",
+      title: bib.title,
+      authors: bib.author?.map(a=>a.name).join(", "),
+      journal: bib.journal?.title,
+      volume: bib.journal?.volume,
+      issue: bib.journal?.number,
+      issn: bib.journal?.issn?.join(", "),
+      year: bib.year,
+      abstract: bib.abstract,
+      keywords: bib.keywords?.join(", "),
+      doi: bib.identifier?.find(id=>id.type==="doi")?.id,
+      articleUrl: bib.link?.[0]?.url
+    });
+  }
+
+  if(data.arxiv?.[i]){
+    const item = data.arxiv[i];
+    articleCount++;
+    html += renderCard({
+      number: articleCount,
+      source: "arXiv",
+      title: item.title,
+      authors: item.authors,
+      journal: "arXiv Preprint",
+      volume: "",
+      issue: "",
+      issn: "",
+      year: item.year,
+      abstract: item.abstract,
+      keywords: "",
+      doi: "",
+      articleUrl: item.link
+    });
+  }
+
+}
 
   resultDiv.innerHTML += html;
 
@@ -642,6 +637,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
