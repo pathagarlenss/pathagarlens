@@ -406,6 +406,7 @@ async function loadResults(reset = false){
     const arxiv = data.arxiv || [];
     const pubmed = data.pubmed || [];
     const europepmc = data.europepmc || [];
+    const datacite = data.datacite || [];
 
     
     const maxLength = Math.max(
@@ -415,7 +416,8 @@ async function loadResults(reset = false){
       doaj.length,
       arxiv.length,
       pubmed.length,
-      europepmc.length
+      europepmc.length,
+      datacite.length
     );
 
     for(let i = 0; i < maxLength; i++){
@@ -562,6 +564,28 @@ async function loadResults(reset = false){
     articleUrl: item.link
   });
 }
+
+if(datacite[i]){
+  const item = datacite[i];
+  articleCount++;
+
+  html += renderCard({
+    number: articleCount,
+    source: "DataCite",
+    title: item.title,
+    authors: item.authors,
+    journal: item.journal,
+    volume: "",
+    issue: "",
+    issn: "",
+    year: item.year,
+    abstract: item.abstract,
+    keywords: "",
+    doi: item.doi,
+    articleUrl: item.link
+  });
+}
+      
     }
 
     resultDiv.innerHTML += html;
@@ -666,6 +690,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
