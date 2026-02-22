@@ -116,13 +116,46 @@ try {
   console.log("PubMed failed");
 }
 
+// EUROPE PMC
+let europepmc = [];
+
+try {
+
+  const epmcRes = await fetch(
+    `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${q}&format=json&pageSize=10&page=${page}`
+  );
+
+  const epmcData = await epmcRes.json();
+
+  const results = epmcData?.resultList?.result || [];
+
+  europepmc = results.map(item => ({
+    title: item.title,
+    authors: item.authorString,
+    journal: item.journalTitle,
+    volume: item.volume,
+    issue: item.issue,
+    issn: item.issn,
+    year: item.pubYear,
+    abstract: item.abstractText,
+    doi: item.doi,
+    link: item.doi 
+          ? `https://doi.org/${item.doi}` 
+          : `https://europepmc.org/article/${item.source}/${item.id}`
+  }));
+
+} catch (e) {
+  console.log("Europe PMC failed");
+}
+    
     res.status(200).json({
       crossref: crossref?.message?.items || [],
       openalex: openalex?.results || [],
       semantic: semantic?.data || [],
       doaj: doaj || [],
       arxiv: arxiv || [],
-      pubmed: pubmed || []
+      pubmed: pubmed || [],
+      europepmc: europepmc || []
     });
 
   } catch (error) {
