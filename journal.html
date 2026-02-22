@@ -301,6 +301,96 @@ document.addEventListener("click", function(event){
 });
 </script>
 
+  <script>
+let currentPage = 1;
+let currentQuery = "";
+let loading = false;
+
+async function loadResults(reset = false){
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
+
+  if(!query) return;
+
+  if(reset){
+    currentPage = 1;
+    document.getElementById("journalResults").innerHTML = "";
+  }
+
+  currentQuery = query;
+  const resultDiv = document.getElementById("journalResults");
+
+  loading = true;
+  document.getElementById("loadMoreBtn").innerText = "Loading...";
+
+  try{
+
+    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+    const data = await response.json();
+
+    let html = "";
+
+    // CROSSREF
+    data.crossref.forEach(item => {
+      html += `
+        <div class="result-card">
+          <h3>${item.title?.[0] || "No Title"}</h3>
+          <p><strong>Source:</strong> Crossref</p>
+          <p><strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}</p>
+          <p><strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}</p>
+          <p><strong>DOI:</strong> ${item.DOI}</p>
+          <p><a href="https://doi.org/${item.DOI}" target="_blank">Read Article</a></p>
+        </div>
+      `;
+    });
+
+    // OPENALEX
+    data.openalex.forEach(item => {
+      html += `
+        <div class="result-card">
+          <h3>${item.title || "No Title"}</h3>
+          <p><strong>Source:</strong> OpenAlex</p>
+          <p><strong>Year:</strong> ${item.publication_year || "N/A"}</p>
+          <p><strong>DOI:</strong> ${item.doi || "N/A"}</p>
+          ${item.doi ? `<p><a href="${item.doi}" target="_blank">Read Article</a></p>` : ""}
+        </div>
+      `;
+    });
+
+    // SEMANTIC
+    data.semantic.forEach(item => {
+      html += `
+        <div class="result-card">
+          <h3>${item.title}</h3>
+          <p><strong>Source:</strong> Semantic Scholar</p>
+          <p><strong>Year:</strong> ${item.year || "N/A"}</p>
+          ${item.externalIds?.DOI ? `<p><strong>DOI:</strong> ${item.externalIds.DOI}</p>` : ""}
+          ${item.url ? `<p><a href="${item.url}" target="_blank">Read Article</a></p>` : ""}
+        </div>
+      `;
+    });
+
+    resultDiv.innerHTML += html;
+
+    loading = false;
+    document.getElementById("loadMoreBtn").innerText = "Load More";
+
+  } catch(error){
+    document.getElementById("loadMoreBtn").innerText = "Error";
+  }
+}
+
+document.getElementById("loadMoreBtn").addEventListener("click", () => {
+  if(!loading){
+    currentPage++;
+    loadResults();
+  }
+});
+
+loadResults(true);
+</script>
 
 </body>
 </html>
+
