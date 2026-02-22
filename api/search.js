@@ -211,44 +211,6 @@ try {
   console.log("Zenodo failed");
 }
 
-    // OPENAIRE
-// OPENAIRE (FIXED)
-let openaire = [];
-
-try {
-
-  const oaRes = await fetch(
-    `https://api.openaire.eu/search/publications?format=json&keywords=${q}&size=10&page=${page}`
-  );
-
-  const oaData = await oaRes.json();
-
-  const results = oaData?.response?.results?.result || [];
-
-  openaire = results.map(item => {
-
-    const entity = item?.metadata?.["oaf:entity"]?.["oaf:result"] || {};
-
-    return {
-      title: entity?.title?.["$"] || "",
-      authors: entity?.creator?.map(c => c["$"]).join(", ") || "",
-      journal: entity?.publisher?.["$"] || "",
-      volume: "",
-      issue: "",
-      issn: "",
-      year: entity?.dateofacceptance?.substring(0,4) || "",
-      abstract: entity?.description?.["$"] || "",
-      doi: entity?.pid?.["$"] || "",
-      link: entity?.pid?.["$"] 
-            ? `https://doi.org/${entity.pid["$"]}` 
-            : ""
-    };
-
-  });
-
-} catch (e) {
-  console.log("OpenAIRE failed");
-}
     
     res.status(200).json({
       crossref: crossref?.message?.items || [],
@@ -259,8 +221,7 @@ try {
       pubmed: pubmed || [],
       europepmc: europepmc || [],
       datacite: datacite || [],
-      zenodo: zenodo || [],
-      openaire: openaire || []
+      zenodo: zenodo || []
     });
 
   } catch (error) {
