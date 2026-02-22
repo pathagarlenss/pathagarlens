@@ -372,9 +372,8 @@ document.addEventListener("click", function(event){
 
 <script>
 let currentPage = 1;
-let currentQuery = "";
-let loading = false;
 let articleCount = 0;
+let loading = false;
 
 async function loadResults(reset = false){
 
@@ -388,123 +387,119 @@ async function loadResults(reset = false){
     document.getElementById("journalResults").innerHTML = "";
   }
 
-  const resultDiv = document.getElementById("journalResults");
-
   loading = true;
   document.getElementById("loadMoreBtn").innerText = "Loading...";
 
-  try{
+  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+  const data = await response.json();
 
-    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-    const data = await response.json();
+  const resultDiv = document.getElementById("journalResults");
 
-    let html = "";
+  let html = "";
+
+  for(let i = 0; i < 10; i++){
 
     // CROSSREF
-    data.crossref.forEach(item => {
-  articleCount++;
-
-  const authors = item.author
-    ? item.author.map(a => a.given + " " + a.family).join(", ")
-    : "N/A";
-
-  html += `
-    <div class="result-card">
-      <div class="result-source">#${articleCount} • Source: Crossref</div>
-
-      <div class="result-title">
-        ${item.title?.[0] || "No Title"}
-      </div>
-
-      <div class="result-meta">
-        <strong>Authors:</strong> ${authors}
-      </div>
-
-      <div class="result-meta">
-        <strong>Journal:</strong> ${item['container-title']?.[0] || "N/A"}
-      </div>
-
-      <div class="result-meta">
-        <strong>Volume:</strong> ${item.volume || "N/A"}
-        &nbsp; | &nbsp;
-        <strong>Issue:</strong> ${item.issue || "N/A"}
-      </div>
-
-      <div class="result-meta">
-        <strong>ISSN:</strong> ${item.ISSN ? item.ISSN.join(", ") : "N/A"}
-      </div>
-
-      <div class="result-meta">
-        <strong>Year:</strong> ${item.created?.["date-parts"]?.[0]?.[0] || "N/A"}
-      </div>
-
-      <div class="result-meta">
-        <strong>DOI:</strong> ${item.DOI}
-      </div>
-
-      <a href="https://doi.org/${item.DOI}" 
-         target="_blank" 
-         class="read-btn">
-         Read Full Article
-      </a>
-    </div>
-  `;
-});
-    // OPENALEX
-    data.openalex.forEach(item => {
+    if(data.crossref[i]){
+      const item = data.crossref[i];
       articleCount++;
-      html += `
-        <div class="result-card">
-          <div class="result-source">#${articleCount} • Source: OpenAlex</div>
-          <div class="result-title">${item.title || "No Title"}</div>
-          <div class="result-meta"><strong>Year:</strong> ${item.publication_year || "N/A"}</div>
-          <div class="result-meta"><strong>DOI:</strong> ${item.doi || "N/A"}</div>
-          ${item.doi ? `<a href="${item.doi}" target="_blank" class="read-btn">Read Full Article</a>` : ""}
-        </div>
-      `;
-    });
 
-    // SEMANTIC SCHOLAR
-   data.semantic.forEach(item => {
-  articleCount++;
+      html += renderCard({
+        number: articleCount,
+        source: "Crossref",
+        title: item.title?.[0],
+        authors: item.author ? item.author.map(a => a.given + " " + a.family).join(", ") : "",
+        journal: item['container-title']?.[0],
+        volume: item.volume,
+        issue: item.issue,
+        issn: item.ISSN?.join(", "),
+        year: item.created?.["date-parts"]?.[0]?.[0],
+        abstract: item.abstract,
+        keywords: "",
+        doi: item.DOI,
+        doiLink: `https://doi.org/${item.DOI}`
+      });
+    }
 
-  const keywords = item.keywords
-    ? item.keywords.map(k => k.name).join(", ")
-    : "N/A";
+    // OPENALEX
+    if(data.openalex[i]){
+      const item = data.openalex[i];
+      articleCount++;
 
-  html += `
-    <div class="result-card">
-      <div class="result-source">#${articleCount} • Source: Semantic Scholar</div>
-      <div class="result-title">${item.title}</div>
-      <div class="result-meta"><strong>Year:</strong> ${item.year || "N/A"}</div>
+      html += renderCard({
+        number: articleCount,
+        source: "OpenAlex",
+        title: item.title,
+        authors: item.authorships?.map(a=>a.author.display_name).join(", "),
+        journal: item.host_venue?.display_name,
+        volume: item.biblio?.volume,
+        issue: item.biblio?.issue,
+        issn: item.host_venue?.issn_l,
+        year: item.publication_year,
+        abstract: "",
+        keywords: item.concepts?.map(c=>c.display_name).join(", "),
+        doi: item.doi,
+        doiLink: item.doi
+      });
+    }
 
-      ${item.abstract ? `
-        <div class="abstract-box">
-          <strong>Abstract:</strong> ${item.abstract.substring(0,400)}...
-        </div>
-      ` : ""}
+    // SEMANTIC
+    if(data.semantic[i]){
+      const item = data.semantic[i];
+      articleCount++;
 
-      <div class="keyword-box">
-        <strong>Keywords:</strong> ${keywords}
-      </div>
-
-      ${item.externalIds?.DOI ? `<div class="result-meta"><strong>DOI:</strong> ${item.externalIds.DOI}</div>` : ""}
-      ${item.url ? `<a href="${item.url}" target="_blank" class="read-btn">Read Full Article</a>` : ""}
-    </div>
-  `;
-});
-
-    resultDiv.innerHTML += html;
-
-    loading = false;
-    document.getElementById("loadMoreBtn").innerText = "Load More";
-
-  } catch(error){
-    document.getElementById("loadMoreBtn").innerText = "Error";
+      html += renderCard({
+        number: articleCount,
+        source: "Semantic Scholar",
+        title: item.title,
+        authors: item.authors?.map(a=>a.name).join(", "),
+        journal: item.venue,
+        volume: "",
+        issue: "",
+        issn: "",
+        year: item.year,
+        abstract: item.abstract,
+        keywords: item.keywords?.map(k=>k.name).join(", "),
+        doi: item.externalIds?.DOI,
+        doiLink: item.externalIds?.DOI ? `https://doi.org/${item.externalIds.DOI}` : ""
+      });
+    }
   }
+
+  resultDiv.innerHTML += html;
+
+  loading = false;
+  document.getElementById("loadMoreBtn").innerText = "Load More";
 }
 
-document.getElementById("loadMoreBtn").addEventListener("click", () => {
+function renderCard(data){
+  return `
+  <div class="result-card">
+    <div class="result-source">#${data.number} • ${data.source}</div>
+    <div class="result-title">${data.title || "No Title"}</div>
+
+    <div class="result-meta"><strong>Authors:</strong> ${data.authors || "N/A"}</div>
+    <div class="result-meta"><strong>Journal:</strong> ${data.journal || "N/A"}</div>
+    <div class="result-meta">
+      <strong>Volume:</strong> ${data.volume || "N/A"} |
+      <strong>Issue:</strong> ${data.issue || "N/A"}
+    </div>
+    <div class="result-meta"><strong>ISSN:</strong> ${data.issn || "N/A"}</div>
+    <div class="result-meta"><strong>Year:</strong> ${data.year || "N/A"}</div>
+
+    ${data.abstract ? `<div class="abstract-box"><strong>Abstract:</strong> ${data.abstract}</div>` : ""}
+
+    ${data.keywords ? `<div class="keyword-box"><strong>Keywords:</strong> ${data.keywords}</div>` : ""}
+
+    ${data.doi ? `<div class="result-meta"><strong>DOI:</strong> 
+      <a href="${data.doiLink}" target="_blank">${data.doi}</a>
+    </div>` : ""}
+
+  </div>
+  `;
+}
+
+document.getElementById("loadMoreBtn").addEventListener("click",()=>{
   if(!loading){
     currentPage++;
     loadResults();
@@ -535,6 +530,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
