@@ -470,8 +470,14 @@ async function loadResults(reset = false){
 
   resultDiv.innerHTML += html;
 
-  loading = false;
-  document.getElementById("loadMoreBtn").innerText = "Load More";
+if(!html){
+  document.getElementById("loadMoreBtn").innerText = "No More Results";
+  loading = true;
+  return;
+}
+
+loading = false;
+document.getElementById("loadMoreBtn").innerText = "Load More";
 }
 function renderCard(data){
 
@@ -541,11 +547,12 @@ function renderCard(data){
 }
 
 document.getElementById("loadMoreBtn").addEventListener("click",()=>{
-  if(!loading){
-    currentPage++;
-    console.log("Query",query);
-    loadResults();
-  }
+  if(loading) return;
+
+  currentPage++;
+  console.log("Loading page:", currentPage);
+
+  loadResults();
 });
 
 loadResults(true);
@@ -580,6 +587,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
