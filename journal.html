@@ -306,6 +306,25 @@ a{
   <form action="journal.html" method="GET" style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;">
 
     <input type="text" id="searchInput" name="q" placeholder="Search journals..." required>
+  
+    
+    <div id="historyBox" style="
+  position:relative;
+  max-width:60%;
+  margin:auto;
+">
+  <div id="historyList" style="
+    position:absolute;
+    width:100%;
+    background:white;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    border-radius:6px;
+    display:none;
+    z-index:999;
+  "></div>
+</div>
+
+    
     <button type="submit">Search</button>
 
     <select id="sortSelect" style="padding:12px; border-radius:6px;">
@@ -314,19 +333,6 @@ a{
       <option value="oldest">Oldest First</option>
     </select>
 
-
-       <!-- 🔽 HISTORY DROPDOWN -->
-    <div id="historyList" style="
-      position:absolute;
-      top:60px;
-      left:0;
-      width:100%;
-      background:white;
-      box-shadow:0 4px 12px rgba(0,0,0,0.1);
-      border-radius:6px;
-      display:none;
-      z-index:1000;
-    "></div>
   </form>
   
 <div id="searchInfo" style="
@@ -615,8 +621,10 @@ document.getElementById("sortSelect").addEventListener("change", function(){
 // =======================
 loadResults();
 
-  <script>
-
+</script>
+  
+<script>
+  
 // =======================
 // SEARCH HISTORY SYSTEM
 // =======================
@@ -630,9 +638,10 @@ function saveSearch(query){
 
   let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
 
+  // duplicate remove
   history = history.filter(item => item !== query);
 
-  history.unshift(query);
+  history.unshift(query); // নতুনটা সামনে
 
   if(history.length > 8){
     history = history.slice(0,8);
@@ -671,14 +680,17 @@ function selectHistory(value){
   window.location.href = `journal.html?q=${encodeURIComponent(value)}`;
 }
 
+// Hide dropdown when clicking outside
 document.addEventListener("click", function(e){
   if(!searchInput.contains(e.target)){
     historyList.style.display = "none";
   }
 });
 
+// Show history when input focused
 searchInput.addEventListener("focus", showHistory);
 
+// Save current search automatically
 document.addEventListener("DOMContentLoaded", function(){
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -689,10 +701,9 @@ document.addEventListener("DOMContentLoaded", function(){
   }
 
 });
-
-</script>
 </script>
 
+  
   
 <script>
   console.log("Script Loaded");
@@ -724,6 +735,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
