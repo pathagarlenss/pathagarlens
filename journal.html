@@ -382,7 +382,6 @@ document.addEventListener("click", function(event){
 </script>
 
 <script>
-
 let currentPage = 1;
 let perPage = 10;
 let totalResults = 0;
@@ -426,14 +425,14 @@ function renderResults(){
 
   const startNumber = (currentPage - 1) * perPage;
 
-  currentResults.slice(0, perPage).forEach((item,index)=>{
+  currentResults.forEach((item,index)=>{
 
     const number = startNumber + index + 1;
 
     container.innerHTML += `
       <div class="result-card">
         <div class="result-source">
-          #${number}
+          #${number} • ${item.source || "Unknown"}
         </div>
 
         <div class="result-title">${item.title || "No Title"}</div>
@@ -483,10 +482,6 @@ function formatAuthors(authors){
 // SORT
 // =======================
 function applySort(){
-
-  if(currentSort === "default"){
-    // no shuffle now (keep API order)
-  }
 
   if(currentSort === "newest"){
     currentResults.sort((a,b)=> (parseInt(b.year)||0)-(parseInt(a.year)||0));
@@ -589,7 +584,6 @@ document.getElementById("sortSelect").addEventListener("change", function(){
 // INITIAL LOAD
 // =======================
 loadResults();
-
 </script>
 
   
@@ -623,5 +617,6 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
