@@ -400,22 +400,16 @@ function shuffleArray(array){
 
 // =======================
 // LOAD RESULTS
-const searchInput = document.querySelector('input[name="q"]');
-if(searchInput){
-  searchInput.value = query;
-}
+
 
 async function loadResults(){
 
   showLoading(true);
-
   
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
   if(!query) return;
 
-  document.getElementById("searchInfo").innerHTML =
-  `Showing results for: "<span style="color:#0a2a66">${query}</span>"`;
 
   try{
     const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
@@ -627,6 +621,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
