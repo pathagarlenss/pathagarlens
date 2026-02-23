@@ -386,7 +386,8 @@ document.addEventListener("click", function(event){
 let currentPage = 1;
 let articleCount = 0;
 let loading = false;
-let allResults = [];  
+let allResults = [];
+let currentSort = "default"; 
 
 async function loadResults(reset = false){
 
@@ -648,6 +649,9 @@ if(datacite[i]){
     }
 
     resultDiv.innerHTML += html;
+    if(currentSort !== "default"){
+      sortResults(currentSort);
+    }
 
     if(!html){
       document.getElementById("loadMoreBtn").innerText = "No More Results";
@@ -721,6 +725,7 @@ loadResults(true);
 
 document.getElementById("sortSelect").addEventListener("change", function(){
   sortResults(this.value);
+  sortResults(currentSort);
 });
 
 
@@ -789,6 +794,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
