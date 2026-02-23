@@ -706,11 +706,17 @@ function renderCard(data){
     </div>
     <div class="result-meta"><strong>ISSN:</strong> ${data.issn || "N/A"}</div>
     <div class="result-meta"><strong>Year:</strong> ${data.year || "N/A"}</div>
+${data.doi ? `
+  <div class="result-meta">
+    <strong>DOI:</strong>
+    <a href="https://doi.org/${data.doi.replace(/^https?:\/\/doi\.org\//,'')}" 
+       target="_blank" 
+       style="color:#0a2a66; font-weight:600;">
+      ${data.doi.replace(/^https?:\/\/doi\.org\//,'')}
+    </a>
+  </div>
+` : ""}
 
-    ${data.abstract ? `
-      <div class="abstract-box">
-        <strong>Abstract:</strong> ${data.abstract}
-      </div>` : ""}
 
     ${data.keywords ? `
       <div class="keyword-box">
@@ -804,6 +810,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
