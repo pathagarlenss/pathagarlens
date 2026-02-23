@@ -472,9 +472,17 @@ function renderResults(){
 
         <div class="result-title">${item.title}</div>
 
-        <div class="result-meta"><strong>Authors:</strong> ${item.authors}</div>
-        <div class="result-meta"><strong>Journal:</strong> ${item.journal}</div>
-        <div class="result-meta"><strong>Year:</strong> ${item.year || "N/A"}</div>
+        <div class="result-meta">
+          <strong>Authors:</strong> ${formatAuthors(item.authors)}
+        </div>
+
+        <div class="result-meta">
+          <strong>Journal:</strong> ${item.journal}
+        </div>
+
+        <div class="result-meta">
+          <strong>Year:</strong> ${item.year || "N/A"}
+        </div>
 
         ${item.doi ? `
           <div class="result-meta">
@@ -493,6 +501,20 @@ function renderResults(){
       </div>
     `;
   });
+}
+
+function formatAuthors(authorsString){
+
+  if(!authorsString) return "N/A";
+
+  const authorsArray = authorsString.split(",");
+
+  if(authorsArray.length <= 5){
+    return authorsString;
+  }
+
+  const firstFive = authorsArray.slice(0,5).join(", ");
+  return firstFive + " et al.";
 }
 
 
@@ -668,6 +690,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
