@@ -503,16 +503,15 @@ function renderPagination(){
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = "";
 
+  const MAX_PAGE = 500;
   let html = "";
 
-  // Prev button
   if(currentPage > 1){
     html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
   }
 
-  // Start page logic (sliding window)
   let startPage = Math.max(1, currentPage - 2);
-  let endPage = startPage + visiblePages - 1;
+  let endPage = Math.min(MAX_PAGE, currentPage + 2);
 
   for(let i = startPage; i <= endPage; i++){
     html += `
@@ -528,8 +527,7 @@ function renderPagination(){
     `;
   }
 
-  // Next button (শুধু তখন দেখাবে যখন full 10 result আছে)
-  if(currentResults.length === perPage){
+  if(currentPage < MAX_PAGE){
     html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
   }
 
@@ -610,6 +608,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
