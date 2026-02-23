@@ -314,6 +314,19 @@ a{
       <option value="oldest">Oldest First</option>
     </select>
 
+
+       <!-- 🔽 HISTORY DROPDOWN -->
+    <div id="historyList" style="
+      position:absolute;
+      top:60px;
+      left:0;
+      width:100%;
+      background:white;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      border-radius:6px;
+      display:none;
+      z-index:1000;
+    "></div>
   </form>
   
 <div id="searchInfo" style="
@@ -601,6 +614,83 @@ document.getElementById("sortSelect").addEventListener("change", function(){
 // INITIAL LOAD
 // =======================
 loadResults();
+
+  <script>
+
+// =======================
+// SEARCH HISTORY SYSTEM
+// =======================
+
+const searchInput = document.getElementById("searchInput");
+const historyList = document.getElementById("historyList");
+
+function saveSearch(query){
+
+  if(!query) return;
+
+  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+  history = history.filter(item => item !== query);
+
+  history.unshift(query);
+
+  if(history.length > 8){
+    history = history.slice(0,8);
+  }
+
+  localStorage.setItem("searchHistory", JSON.stringify(history));
+}
+
+function showHistory(){
+
+  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+  if(history.length === 0) return;
+
+  historyList.innerHTML = "";
+
+  history.forEach(item=>{
+    historyList.innerHTML += `
+      <div style="
+        padding:10px;
+        cursor:pointer;
+        border-bottom:1px solid #eee;
+      "
+      onclick="selectHistory('${item}')">
+        ${item}
+      </div>
+    `;
+  });
+
+  historyList.style.display = "block";
+}
+
+function selectHistory(value){
+  searchInput.value = value;
+  historyList.style.display = "none";
+  window.location.href = `journal.html?q=${encodeURIComponent(value)}`;
+}
+
+document.addEventListener("click", function(e){
+  if(!searchInput.contains(e.target)){
+    historyList.style.display = "none";
+  }
+});
+
+searchInput.addEventListener("focus", showHistory);
+
+document.addEventListener("DOMContentLoaded", function(){
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
+
+  if(query){
+    saveSearch(query);
+  }
+
+});
+
+</script>
 </script>
 
   
@@ -634,6 +724,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
