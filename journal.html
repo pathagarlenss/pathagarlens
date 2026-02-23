@@ -718,7 +718,33 @@ document.getElementById("loadMoreBtn").addEventListener("click",()=>{
 });
 
 loadResults(true);
+
+  function sortResults(type){
+
+  if(type === "newest"){
+    allResults.sort((a,b) => (b.year || 0) - (a.year || 0));
+  }
+
+  if(type === "oldest"){
+    allResults.sort((a,b) => (a.year || 0) - (b.year || 0));
+  }
+
+  if(type === "default"){
+    allResults.sort((a,b) => a.number - b.number);
+  }
+
+  const resultDiv = document.getElementById("journalResults");
+  resultDiv.innerHTML = "";
+
+  allResults.forEach((item,index)=>{
+    item.number = index + 1;
+    resultDiv.innerHTML += renderCard(item);
+  });
+}
+
 </script>
+
+  
 <script>
   console.log("Script Loaded");
     </script>
@@ -749,6 +775,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
