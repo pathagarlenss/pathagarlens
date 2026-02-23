@@ -8,9 +8,6 @@ export default async function handler(req, res) {
 
   try {
 
-    // =========================
-    // PARALLEL FETCH
-    // =========================
     const [
       crossrefRes,
       openAlexRes,
@@ -60,48 +57,74 @@ export default async function handler(req, res) {
     const zenData = await safeJson(zenRes);
 
     // =========================
-// ARXIV PARSE
-// =========================
-let arxiv = [];
+    // ARXIV PARSE
+    // =========================
+    let arxiv = [];
 
-if (arxivRes.status === "fulfilled") {
-  try {
-    const xml = await arxivRes.value.text();
-    const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
+    if (arxivRes.status === "fulfilled") {
+      try {
+        const xml = await arxivRes.value.text();
+        const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
-    arxiv = entries.map(entry => {
+        arxiv = entries.map(entry => {
 
-      const extract = (tag) => {
-        const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-        return match ? match[1].replace(/\s+/g,' ').trim() : "";
-      };
+          const extract = (tag) => {
+            const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+            return match ? match[1].replace(/\s+/g,' ').trim() : "";
+          };
 
-      const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
-        .map(a => a[1])
-        .join(", ");
+          const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
+            .map(a => a[1])
+            .slice(0,5)
+            .join(", ");
 
-      return {
-        title: extract("title"),
-        authors,
-        journal: "arXiv Preprint",
-        year: extract("published")?.substring(0,4),
-        doi: "",
-        link: extract("id")
-      };
-    });
+          return {
+            title: extract("title"),
+            authors,
+            journal: "arXiv Preprint",
+            year: extract("published")?.substring(0,4),
+            doi: "",
+            link: extract("id")
+          };
+        });
 
-  } catch (e) {
-    console.log("arXiv parse error");
-  }
-}
+      } catch {}
+    }
 
     // =========================
-    // FORMAT ALL DATABASE SAME STRUCTURE
+    // PUBMED FORMAT
+    // =========================
+    let pubmed = [];
+
+    if (pubmedData?.esearchresult?.idlist?.length) {
+      const ids = pubmedData.esearchresult.idlist;
+
+      const fetchDetails = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`
+      );
+
+      const detailData = await fetchDetails.json();
+
+      pubmed = ids.map(id => {
+        const item = detailData.result[id];
+        return {
+          title: item?.title,
+          authors: item?.authors?.map(a => a.name).slice(0,5).join(", "),
+          journal: item?.fulljournalname,
+          year: item?.pubdate?.substring(0,4),
+          doi: item?.elocationid?.replace("doi:",""),
+          link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+        };
+      });
+    }
+
+    // =========================
+    // FORMAT OTHERS
     // =========================
 
     const crossrefData = (crossref?.message?.items || []).map(item => ({
       title: item.title?.[0],
-      authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
+      authors: item.author?.map(a=>a.given+" "+a.family).slice(0,5).join(", "),
       journal: item["container-title"]?.[0],
       year: item.created?.["date-parts"]?.[0]?.[0],
       doi: item.DOI,
@@ -110,7 +133,7 @@ if (arxivRes.status === "fulfilled") {
 
     const openalexData = (openalex?.results || []).map(item => ({
       title: item.title,
-      authors: item.authorships?.map(a=>a.author.display_name).join(", "),
+      authors: item.authorships?.map(a=>a.author.display_name).slice(0,5).join(", "),
       journal: item.host_venue?.display_name,
       year: item.publication_year,
       doi: item.doi,
@@ -121,7 +144,7 @@ if (arxivRes.status === "fulfilled") {
 
     const semanticData = (semantic?.data || []).map(item => ({
       title: item.title,
-      authors: item.authors?.map(a=>a.name).join(", "),
+      authors: item.authors?.map(a=>a.name).slice(0,5).join(", "),
       journal: item.venue,
       year: item.year,
       doi: item.externalIds?.DOI,
@@ -132,7 +155,7 @@ if (arxivRes.status === "fulfilled") {
       const bib = item?.bibjson || {};
       return {
         title: bib.title,
-        authors: bib.author?.map(a=>a.name).join(", "),
+        authors: bib.author?.map(a=>a.name).slice(0,5).join(", "),
         journal: bib.journal?.title,
         year: bib.year,
         doi: bib.identifier?.find(id=>id.type==="doi")?.id,
@@ -142,7 +165,7 @@ if (arxivRes.status === "fulfilled") {
 
     const europepmc = (epmcData?.resultList?.result || []).map(item=>({
       title: item.title,
-      authors: item.authorString,
+      authors: item.authorString?.split(",").slice(0,5).join(", "),
       journal: item.journalTitle,
       year: item.pubYear,
       doi: item.doi,
@@ -153,7 +176,7 @@ if (arxivRes.status === "fulfilled") {
 
     const datacite = (dcData?.data || []).map(item=>({
       title: item.attributes?.titles?.[0]?.title,
-      authors: item.attributes?.creators?.map(a=>a.name).join(", "),
+      authors: item.attributes?.creators?.map(a=>a.name).slice(0,5).join(", "),
       journal: item.attributes?.publisher,
       year: item.attributes?.publicationYear,
       doi: item.attributes?.doi,
@@ -162,7 +185,7 @@ if (arxivRes.status === "fulfilled") {
 
     const zenodo = (zenData?.hits?.hits || []).map(item=>({
       title: item.metadata?.title,
-      authors: item.metadata?.creators?.map(a=>a.name).join(", "),
+      authors: item.metadata?.creators?.map(a=>a.name).slice(0,5).join(", "),
       journal: "Zenodo",
       year: item.metadata?.publication_date?.substring(0,4),
       doi: item.metadata?.doi,
@@ -170,30 +193,45 @@ if (arxivRes.status === "fulfilled") {
     }));
 
     // =========================
-    // MERGE ALL
+    // MERGE
     // =========================
-    const allResults = [
+    let allResults = [
       ...crossrefData,
       ...openalexData,
       ...semanticData,
       ...doaj,
       ...arxiv,
+      ...pubmed,
       ...europepmc,
       ...datacite,
       ...zenodo
     ];
 
     // =========================
-    // TOTAL COUNT
+    // REMOVE DUPLICATE DOI
     // =========================
-    const totalResults =
-      Number(crossref?.message?.["total-results"] || 0) +
-      Number(openalex?.meta?.count || 0) +
-      Number(semantic?.total || 0) +
-      Number(pubmedData?.esearchresult?.count || 0) +
-      Number(epmcData?.hitCount || 0) +
-      Number(dcData?.meta?.total || 0) +
-      Number(zenData?.hits?.total?.value || 0);
+    const seen = new Set();
+    allResults = allResults.filter(item => {
+      if (!item.doi) return true;
+      const d = item.doi.toLowerCase();
+      if (seen.has(d)) return false;
+      seen.add(d);
+      return true;
+    });
+
+    // =========================
+    // EXACT MATCH FIRST
+    // =========================
+    const queryLower = q.toLowerCase().trim();
+    allResults.sort((a,b)=>{
+      const aExact = a.title?.toLowerCase().trim() === queryLower;
+      const bExact = b.title?.toLowerCase().trim() === queryLower;
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      return 0;
+    });
+
+    const totalResults = allResults.length;
 
     res.status(200).json({
       results: allResults,
