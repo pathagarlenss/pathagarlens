@@ -303,7 +303,14 @@ const grandTotal =
     
    res.status(200).json({
   crossref: removeDuplicate(crossref?.message?.items || []),
-  openalex: removeDuplicate(openalex?.results || []),
+  openalex: removeDuplicate(openalex?.results || []).map(item => ({
+  ...item,
+  link: item.doi
+    ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
+    : item.primary_location?.landing_page_url
+      ? item.primary_location.landing_page_url
+      : item.id
+})),
   semantic: removeDuplicate(semantic?.data || []),
   doaj: removeDuplicate(doaj || []),
   arxiv: removeDuplicate(arxiv || []),
