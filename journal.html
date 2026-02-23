@@ -305,8 +305,7 @@ a{
 <div class="search-section">
   <form action="journal.html" method="GET" style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;">
 
-    <input type="text" name="q" placeholder="Search journals..." required>
-
+    <input type="text" id="searchInput" name="q" placeholder="Search journals..." required>
     <button type="submit">Search</button>
 
     <select id="sortSelect" style="padding:12px; border-radius:6px;">
@@ -316,8 +315,14 @@ a{
     </select>
 
   </form>
+  
+<div id="searchInfo" style="
+  margin-top:15px;
+  font-weight:600;
+  color:#0a2a66;
+"></div>
+  
 </div>
-
   
 <!-- Results -->
 <div class="results-container">
@@ -407,8 +412,16 @@ async function loadResults(){
   showLoading(true);
   
   const urlParams = new URLSearchParams(window.location.search);
-  const query = urlParams.get("q");
-  if(!query) return;
+const query = urlParams.get("q");
+
+if(!query) return;
+
+// 🔥 Search box এ query বসানো
+document.getElementById("searchInput").value = query;
+
+// 🔥 নিচে দেখানো
+document.getElementById("searchInfo").innerHTML =
+  `Showing results for: "<span style="color:black">${query}</span>"`;
 
 
   try{
@@ -621,6 +634,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
