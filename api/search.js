@@ -31,17 +31,43 @@ let zenData = {};
     );
     const semantic = await semanticRes.json();
 
-    // DOAJ (SAFE BLOCK)
-    let doaj = [];
-    try {
-      const doajRes = await fetch(
-        `https://doaj.org/api/search/articles/${q}?page=${page}&pageSize=10`
-      );
-      const doajData = await doajRes.json();
-      doaj = doajData?.results || [];
-    } catch (e) {
-      console.log("DOAJ failed");
-    }
+    // DOAJ (FINAL WORKING VERSION)
+
+let doaj = [];
+
+try {
+
+  const doajRes = await fetch(
+    `https://doaj.org/api/v2/search/articles?q=${encodeURIComponent(q)}&page=${page}&pageSize=10`
+  );
+
+  const doajData = await doajRes.json();
+
+  const results = doajData?.results || [];
+
+  doaj = results.map(item => {
+
+    const bib = item?.bibjson || {};
+
+    return {
+      title: bib.title || "",
+      authors: bib.author?.map(a => a.name).join(", ") || "",
+      journal: bib.journal?.title || "",
+      volume: bib.journal?.volume || "",
+      issue: bib.journal?.number || "",
+      issn: bib.journal?.issn?.join(", ") || "",
+      year: bib.year || "",
+      doi: bib.identifier?.find(id => id.type === "doi")?.id || "",
+      link: bib.link?.[0]?.url || ""
+    };
+
+  });
+
+  console.log("DOAJ COUNT:", doaj.length);
+
+} catch (e) {
+  console.log("DOAJ ERROR:", e);
+}
 
 // ARXIV FINAL CORRECT VERSION
 
