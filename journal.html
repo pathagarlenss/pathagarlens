@@ -719,6 +719,11 @@ document.getElementById("loadMoreBtn").addEventListener("click",()=>{
 
 loadResults(true);
 
+document.getElementById("sortSelect").addEventListener("change", function(){
+  sortResults(this.value);
+});
+
+
   function sortResults(type){
 
   if(type === "newest"){
@@ -775,6 +780,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
