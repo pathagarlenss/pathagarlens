@@ -245,7 +245,11 @@ function removeDuplicate(arr){
   pubmed: removeDuplicate(pubmed || []),
   europepmc: removeDuplicate(europepmc || []),
   datacite: removeDuplicate(datacite || []),
-  zenodo: removeDuplicate(zenodo || [])
+  zenodo: removeDuplicate(zenodo || []),
+
+      // 🔹 Total result count (pagination এর জন্য)
+  totalResults: crossref?.message?.["total-results"] || 0
+});
 });
 
   } catch (error) {
