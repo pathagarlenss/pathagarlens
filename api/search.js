@@ -211,17 +211,39 @@ try {
   console.log("Zenodo failed");
 }
 
+  // DUPLICATE REMOVE (DOI based)
+
+const uniqueDOI = new Set();
+
+function removeDuplicate(arr){
+  return arr.filter(item => {
+
+    if(!item.doi) return true;
+
+    const cleanDoi = item.doi
+      .replace(/^https?:\/\/doi\.org\//,'')
+      .toLowerCase();
+
+    if(uniqueDOI.has(cleanDoi)){
+      return false;
+    } else {
+      uniqueDOI.add(cleanDoi);
+      return true;
+    }
+  });
+}
+    
     res.status(200).json({
-      crossref: crossref?.message?.items || [],
-      openalex: openalex?.results || [],
-      semantic: semantic?.data || [],
-      doaj: doaj || [],
-      arxiv: arxiv || [],
-      pubmed: pubmed || [],
-      europepmc: europepmc || [],
-      datacite: datacite || [],
-      zenodo: zenodo || []
-    });
+  crossref: removeDuplicate(crossref?.message?.items || []),
+  openalex: removeDuplicate(openalex?.results || []),
+  semantic: removeDuplicate(semantic?.data || []),
+  doaj: removeDuplicate(doaj || []),
+  arxiv: removeDuplicate(arxiv || []),
+  pubmed: removeDuplicate(pubmed || []),
+  europepmc: removeDuplicate(europepmc || []),
+  datacite: removeDuplicate(datacite || []),
+  zenodo: removeDuplicate(zenodo || [])
+});
 
   } catch (error) {
     console.error(error);
