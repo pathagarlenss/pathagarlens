@@ -38,20 +38,21 @@ export default async function handler(req, res) {
       console.log("DOAJ failed");
     }
 
-// arXiv)
-    
-   let arxiv = [];
+// ARXIV (STABLE VERSION)
+
+let arxiv = [];
 
 try {
+
   const arxivRes = await fetch(
-    `https://export.arxiv.org/api/query?search_query=all:${q}&start=${offset}&max_results=10`
+    `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=${offset}&max_results=10`
   );
 
   const xml = await arxivRes.text();
 
-  const entries = xml.split("<entry>").slice(1);
+  const entryMatches = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
-  arxiv = entries.map(entry => {
+  arxiv = entryMatches.map(entry => {
 
     const extract = (tag) => {
       const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
@@ -65,14 +66,17 @@ try {
     return {
       title: extract("title"),
       abstract: extract("summary"),
-      authors: authors,
+      authors,
       year: extract("published")?.substring(0,4),
-      link: extract("id")
+      link: extract("id"),
+      doi: ""   // arXiv এ DOI সাধারণত থাকে না
     };
   });
 
+  console.log("ARXIV COUNT:", arxiv.length);
+
 } catch (e) {
-  console.log("arXiv error");
+  console.log("arXiv error:", e);
 }
 
 
