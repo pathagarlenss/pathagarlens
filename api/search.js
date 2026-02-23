@@ -8,14 +8,16 @@ export default async function handler(req, res) {
 
   try {
 
-    // 🔹 Parallel API Calls
+    // =========================
+    // PARALLEL FETCH
+    // =========================
     const [
       crossrefRes,
       openAlexRes,
       semanticRes,
       doajRes,
       arxivRes,
-      pubmedSearchRes,
+      pubmedRes,
       epmcRes,
       dcRes,
       zenRes
@@ -38,13 +40,11 @@ export default async function handler(req, res) {
       fetch(`https://api.datacite.org/dois?query=${encodeURIComponent(q)}&page[size]=10&page[number]=${page}`),
 
       fetch(`https://zenodo.org/api/records?q=${encodeURIComponent(q)}&size=10&page=${page}`)
-
     ]);
 
-    // Safe JSON parse helper
-    const safeJson = async (res) => {
-      if(res.status === "fulfilled") {
-        try { return await res.value.json(); }
+    const safeJson = async (r) => {
+      if (r.status === "fulfilled") {
+        try { return await r.value.json(); }
         catch { return {}; }
       }
       return {};
@@ -54,46 +54,154 @@ export default async function handler(req, res) {
     const openalex = await safeJson(openAlexRes);
     const semantic = await safeJson(semanticRes);
     const doajData = await safeJson(doajRes);
-    const pubmedSearch = await safeJson(pubmedSearchRes);
+    const pubmedData = await safeJson(pubmedRes);
     const epmcData = await safeJson(epmcRes);
     const dcData = await safeJson(dcRes);
     const zenData = await safeJson(zenRes);
 
-    // 🔹 Basic mapping (shortened for stability)
+    // =========================
+// ARXIV PARSE
+// =========================
+let arxiv = [];
 
-    const crossrefData = crossref?.message?.items || [];
-    const openalexData = openalex?.results || [];
-    const semanticData = semantic?.data || [];
-    const doaj = doajData?.results || [];
-    const europepmc = epmcData?.resultList?.result || [];
-    const datacite = dcData?.data || [];
-    const zenodo = zenData?.hits?.hits || [];
+if (arxivRes.status === "fulfilled") {
+  try {
+    const xml = await arxivRes.value.text();
+    const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
-    // 🔹 Total Count (fast + safe)
-    const grandTotal =
+    arxiv = entries.map(entry => {
+
+      const extract = (tag) => {
+        const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+        return match ? match[1].replace(/\s+/g,' ').trim() : "";
+      };
+
+      const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
+        .map(a => a[1])
+        .join(", ");
+
+      return {
+        title: extract("title"),
+        authors,
+        journal: "arXiv Preprint",
+        year: extract("published")?.substring(0,4),
+        doi: "",
+        link: extract("id")
+      };
+    });
+
+  } catch (e) {
+    console.log("arXiv parse error");
+  }
+}
+
+    // =========================
+    // FORMAT ALL DATABASE SAME STRUCTURE
+    // =========================
+
+    const crossrefData = (crossref?.message?.items || []).map(item => ({
+      title: item.title?.[0],
+      authors: item.author?.map(a=>a.given+" "+a.family).join(", "),
+      journal: item["container-title"]?.[0],
+      year: item.created?.["date-parts"]?.[0]?.[0],
+      doi: item.DOI,
+      link: item.DOI ? `https://doi.org/${item.DOI}` : ""
+    }));
+
+    const openalexData = (openalex?.results || []).map(item => ({
+      title: item.title,
+      authors: item.authorships?.map(a=>a.author.display_name).join(", "),
+      journal: item.host_venue?.display_name,
+      year: item.publication_year,
+      doi: item.doi,
+      link: item.doi
+        ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
+        : item.primary_location?.landing_page_url || item.id
+    }));
+
+    const semanticData = (semantic?.data || []).map(item => ({
+      title: item.title,
+      authors: item.authors?.map(a=>a.name).join(", "),
+      journal: item.venue,
+      year: item.year,
+      doi: item.externalIds?.DOI,
+      link: item.url
+    }));
+
+    const doaj = (doajData?.results || []).map(item=>{
+      const bib = item?.bibjson || {};
+      return {
+        title: bib.title,
+        authors: bib.author?.map(a=>a.name).join(", "),
+        journal: bib.journal?.title,
+        year: bib.year,
+        doi: bib.identifier?.find(id=>id.type==="doi")?.id,
+        link: bib.link?.[0]?.url
+      };
+    });
+
+    const europepmc = (epmcData?.resultList?.result || []).map(item=>({
+      title: item.title,
+      authors: item.authorString,
+      journal: item.journalTitle,
+      year: item.pubYear,
+      doi: item.doi,
+      link: item.doi
+        ? `https://doi.org/${item.doi}`
+        : `https://europepmc.org/article/${item.source}/${item.id}`
+    }));
+
+    const datacite = (dcData?.data || []).map(item=>({
+      title: item.attributes?.titles?.[0]?.title,
+      authors: item.attributes?.creators?.map(a=>a.name).join(", "),
+      journal: item.attributes?.publisher,
+      year: item.attributes?.publicationYear,
+      doi: item.attributes?.doi,
+      link: item.attributes?.url || `https://doi.org/${item.attributes?.doi}`
+    }));
+
+    const zenodo = (zenData?.hits?.hits || []).map(item=>({
+      title: item.metadata?.title,
+      authors: item.metadata?.creators?.map(a=>a.name).join(", "),
+      journal: "Zenodo",
+      year: item.metadata?.publication_date?.substring(0,4),
+      doi: item.metadata?.doi,
+      link: item.links?.doi || item.links?.html
+    }));
+
+    // =========================
+    // MERGE ALL
+    // =========================
+    const allResults = [
+      ...crossrefData,
+      ...openalexData,
+      ...semanticData,
+      ...doaj,
+      ...arxiv,
+      ...europepmc,
+      ...datacite,
+      ...zenodo
+    ];
+
+    // =========================
+    // TOTAL COUNT
+    // =========================
+    const totalResults =
       Number(crossref?.message?.["total-results"] || 0) +
       Number(openalex?.meta?.count || 0) +
       Number(semantic?.total || 0) +
-      Number(pubmedSearch?.esearchresult?.count || 0) +
+      Number(pubmedData?.esearchresult?.count || 0) +
       Number(epmcData?.hitCount || 0) +
       Number(dcData?.meta?.total || 0) +
       Number(zenData?.hits?.total?.value || 0);
 
     res.status(200).json({
-      crossref: crossrefData,
-      openalex: openalexData,
-      semantic: semanticData,
-      doaj: doaj,
-      arxiv: [],   // temporarily disabled heavy parsing
-      pubmed: [],
-      europepmc: europepmc,
-      datacite: datacite,
-      zenodo: zenodo,
-      totalResults: grandTotal
+      results: allResults,
+      totalResults
     });
 
   } catch (error) {
-    console.error("SERVER ERROR:", error);
+    console.error(error);
     res.status(500).json({ error: "Fetch failed" });
   }
 }
