@@ -407,38 +407,45 @@ function shuffleArray(array){
 // =======================
 // LOAD RESULTS
 // =======================
-async function loadResults(){
+const urlParams = new URLSearchParams(window.location.search);
+const query = urlParams.get("q");
 
-  showLoading(true);
+if(!query) return;
 
+// 🔹 Show what user searched
+const infoBox = document.getElementById("searchInfo");
+if(infoBox){
+  infoBox.innerHTML =
+    `Showing results for: "<span style="color:#0a2a66">${query}</span>"`;
+}
+
+// 🔹 Keep search text in input box
 const searchInput = document.querySelector('input[name="q"]');
 if(searchInput){
   searchInput.value = query;
 }
 
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const query = urlParams.get("q");
-  if(!query) return;
+showLoading(true);
 
-  document.getElementById("searchInfo").innerHTML =
-  `Showing results for: "<span style="color:#0a2a66">${query}</span>"`;
+try{
 
-  try{
-    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-    const data = await response.json();
+  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+  const data = await response.json();
 
-    currentResults = data.results || [];
+  currentResults = data.results || [];
 
-    applySort();
-    renderResults();
-    renderPagination();
+  applySort();
+  renderResults();
+  renderPagination();
 
-  }catch(err){
-    console.error("Fetch error:", err);
-  }
+}catch(err){
+
+  console.error("Fetch error:", err);
+
+}finally{
 
   showLoading(false);
+
 }
 
 // =======================
@@ -634,6 +641,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
