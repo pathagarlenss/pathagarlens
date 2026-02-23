@@ -3,15 +3,12 @@ export default async function handler(req, res) {
   const { q, page = 1 } = req.query;
   if (!q) return res.status(400).json({ error: "Missing query" });
 
-  const perPage = 10;          // final display per page
-  const fetchLimit = 50;       // per database fetch size
+  const perPage = 10;
+  const fetchLimit = 50;
   const currentPage = Number(page) || 1;
 
   try {
 
-    // =========================
-    // PARALLEL FETCH
-    // =========================
     const requests = await Promise.allSettled([
 
       fetch(`https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=${fetchLimit}`),
@@ -61,6 +58,7 @@ export default async function handler(req, res) {
         const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
         arxiv = entries.map(entry => {
+
           const extract = (tag) => {
             const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
             return match ? match[1].replace(/\s+/g,' ').trim() : "";
@@ -72,6 +70,7 @@ export default async function handler(req, res) {
             .join(", ");
 
           return {
+            source: "arXiv",
             title: extract("title") || "",
             authors,
             journal: "arXiv",
@@ -103,6 +102,7 @@ export default async function handler(req, res) {
         pubmed = ids.map(id => {
           const item = detailData.result[id];
           return {
+            source: "PubMed",
             title: item?.title || "",
             authors: item?.authors?.map(a=>a.name).slice(0,5).join(", ") || "",
             journal: item?.fulljournalname || "",
@@ -117,10 +117,11 @@ export default async function handler(req, res) {
     } catch {}
 
     // =========================
-    // FORMAT ALL DATABASES
+    // FORMAT OTHER DATABASES
     // =========================
 
     const crossrefData = (crossref?.message?.items || []).map(item => ({
+      source: "Crossref",
       title: item.title?.[0] || "",
       authors: item.author?.map(a=>a.given+" "+a.family).slice(0,5).join(", ") || "",
       journal: item["container-title"]?.[0] || "",
@@ -130,6 +131,7 @@ export default async function handler(req, res) {
     }));
 
     const openalexData = (openalex?.results || []).map(item => ({
+      source: "OpenAlex",
       title: item.title || "",
       authors: item.authorships?.map(a=>a.author.display_name).slice(0,5).join(", ") || "",
       journal: item.host_venue?.display_name || "",
@@ -141,6 +143,7 @@ export default async function handler(req, res) {
     }));
 
     const semanticData = (semantic?.data || []).map(item => ({
+      source: "Semantic Scholar",
       title: item.title || "",
       authors: item.authors?.map(a=>a.name).slice(0,5).join(", ") || "",
       journal: item.venue || "",
@@ -152,6 +155,7 @@ export default async function handler(req, res) {
     const doaj = (doajData?.results || []).map(item=>{
       const bib = item?.bibjson || {};
       return {
+        source: "DOAJ",
         title: bib.title || "",
         authors: bib.author?.map(a=>a.name).slice(0,5).join(", ") || "",
         journal: bib.journal?.title || "",
@@ -162,6 +166,7 @@ export default async function handler(req, res) {
     });
 
     const europepmc = (epmcData?.resultList?.result || []).map(item=>({
+      source: "Europe PMC",
       title: item.title || "",
       authors: item.authorString?.split(",").slice(0,5).join(", ") || "",
       journal: item.journalTitle || "",
@@ -173,6 +178,7 @@ export default async function handler(req, res) {
     }));
 
     const datacite = (dcData?.data || []).map(item=>({
+      source: "DataCite",
       title: item.attributes?.titles?.[0]?.title || "",
       authors: item.attributes?.creators?.map(a=>a.name).slice(0,5).join(", ") || "",
       journal: item.attributes?.publisher || "",
@@ -182,6 +188,7 @@ export default async function handler(req, res) {
     }));
 
     const zenodo = (zenData?.hits?.hits || []).map(item=>({
+      source: "Zenodo",
       title: item.metadata?.title || "",
       authors: item.metadata?.creators?.map(a=>a.name).slice(0,5).join(", ") || "",
       journal: "Zenodo",
@@ -205,9 +212,7 @@ export default async function handler(req, res) {
       ...zenodo
     ];
 
-    // =========================
     // REMOVE DUPLICATE DOI
-    // =========================
     const seen = new Set();
     allResults = allResults.filter(item => {
       if (!item.doi) return true;
@@ -217,9 +222,7 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // =========================
     // EXACT MATCH FIRST
-    // =========================
     const queryLower = q.toLowerCase().trim();
     allResults.sort((a,b)=>{
       const aExact = a.title?.toLowerCase().trim() === queryLower;
@@ -229,21 +232,17 @@ export default async function handler(req, res) {
       return 0;
     });
 
-    // =========================
-    // MERGED LEVEL PAGINATION
-    // =========================
     const totalResults = allResults.length;
     const start = (currentPage - 1) * perPage;
     const end = start + perPage;
-    const paginatedResults = allResults.slice(start, end);
 
     res.status(200).json({
-      results: paginatedResults,
-      totalResults: totalResults
+      results: allResults.slice(start, end),
+      totalResults
     });
 
   } catch (error) {
-    console.error("SERVER ERROR:", error);
+    console.error(error);
     res.status(500).json({ error: "Fetch failed" });
   }
 }
