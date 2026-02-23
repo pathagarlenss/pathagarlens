@@ -6,284 +6,94 @@ export default async function handler(req, res) {
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
-  // 🔹 Global totals safe declare
-  let searchData = {};
-  let epmcData = {};
-  let dcData = {};
-  let zenData = {};
-
   try {
 
-    // =========================
-    // CROSSREF
-    // =========================
-    const crossrefRes = await fetch(
-      `https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=${perPage}&offset=${offset}`
-    );
-    const crossref = await crossrefRes.json();
+    // 🔹 Parallel API Calls
+    const [
+      crossrefRes,
+      openAlexRes,
+      semanticRes,
+      doajRes,
+      arxivRes,
+      pubmedSearchRes,
+      epmcRes,
+      dcRes,
+      zenRes
+    ] = await Promise.allSettled([
 
+      fetch(`https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=${perPage}&offset=${offset}`),
 
-    // =========================
-    // OPENALEX
-    // =========================
-    const openAlexRes = await fetch(
-      `https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${perPage}&page=${page}`
-    );
-    const openalex = await openAlexRes.json();
+      fetch(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${perPage}&page=${page}`),
 
+      fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=${perPage}&offset=${offset}&fields=title,authors,year,url,externalIds,venue`),
 
-    // =========================
-    // SEMANTIC SCHOLAR
-    // =========================
-    const semanticRes = await fetch(
-      `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=${perPage}&offset=${offset}&fields=title,authors,year,abstract,url,externalIds,venue`
-    );
-    const semantic = await semanticRes.json();
+      fetch(`https://doaj.org/api/v2/search/articles?q=${encodeURIComponent(q)}&page=${page}&pageSize=10`),
 
+      fetch(`https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=${offset}&max_results=10`),
 
-    // =========================
-    // DOAJ
-    // =========================
-    let doaj = [];
-    try {
-      const doajRes = await fetch(
-        `https://doaj.org/api/v2/search/articles?q=${encodeURIComponent(q)}&page=${page}&pageSize=10`
-      );
-      const doajData = await doajRes.json();
+      fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmax=10&retstart=${offset}&retmode=json`),
 
-      doaj = (doajData?.results || []).map(item => {
-        const bib = item?.bibjson || {};
-        return {
-          title: bib.title || "",
-          authors: bib.author?.map(a => a.name).join(", ") || "",
-          journal: bib.journal?.title || "",
-          volume: bib.journal?.volume || "",
-          issue: bib.journal?.number || "",
-          issn: bib.journal?.issn?.join(", ") || "",
-          year: bib.year || "",
-          doi: bib.identifier?.find(id => id.type === "doi")?.id || "",
-          link: bib.link?.[0]?.url || ""
-        };
-      });
+      fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(q)}&format=json&pageSize=10&page=${page}`),
 
-    } catch (e) {
-      console.log("DOAJ error");
-    }
+      fetch(`https://api.datacite.org/dois?query=${encodeURIComponent(q)}&page[size]=10&page[number]=${page}`),
 
+      fetch(`https://zenodo.org/api/records?q=${encodeURIComponent(q)}&size=10&page=${page}`)
 
-    // =========================
-    // ARXIV
-    // =========================
-    let arxiv = [];
-    try {
-      const arxivRes = await fetch(
-        `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=${offset}&max_results=10`
-      );
-      const xml = await arxivRes.text();
-      const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
+    ]);
 
-      arxiv = entries.map(entry => {
-        const extract = (tag) => {
-          const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-          return match ? match[1].replace(/\s+/g,' ').trim() : "";
-        };
-
-        const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
-          .map(a => a[1])
-          .join(", ");
-
-        return {
-          title: extract("title"),
-          authors,
-          year: extract("published")?.substring(0,4),
-          doi: "",
-          link: extract("id")
-        };
-      });
-
-    } catch (e) {
-      console.log("arXiv error");
-    }
-
-
-    // =========================
-    // PUBMED
-    // =========================
-    let pubmed = [];
-    try {
-      const searchRes = await fetch(
-        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmax=10&retstart=${offset}&retmode=json`
-      );
-      searchData = await searchRes.json();
-      const ids = searchData?.esearchresult?.idlist || [];
-
-      if(ids.length){
-        const fetchRes = await fetch(
-          `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(",")}&retmode=json`
-        );
-        const fetchData = await fetchRes.json();
-
-        pubmed = ids.map(id => {
-          const item = fetchData.result[id];
-          return {
-            title: item.title,
-            authors: item.authors?.map(a => a.name).join(", "),
-            journal: item.fulljournalname,
-            year: item.pubdate?.substring(0,4),
-            doi: item.elocationid?.startsWith("doi:")
-              ? item.elocationid.replace("doi:","")
-              : "",
-            link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
-          };
-        });
+    // Safe JSON parse helper
+    const safeJson = async (res) => {
+      if(res.status === "fulfilled") {
+        try { return await res.value.json(); }
+        catch { return {}; }
       }
+      return {};
+    };
 
-    } catch (e) {
-      console.log("PubMed error");
-    }
+    const crossref = await safeJson(crossrefRes);
+    const openalex = await safeJson(openAlexRes);
+    const semantic = await safeJson(semanticRes);
+    const doajData = await safeJson(doajRes);
+    const pubmedSearch = await safeJson(pubmedSearchRes);
+    const epmcData = await safeJson(epmcRes);
+    const dcData = await safeJson(dcRes);
+    const zenData = await safeJson(zenRes);
 
+    // 🔹 Basic mapping (shortened for stability)
 
-    // =========================
-    // EUROPE PMC
-    // =========================
-    let europepmc = [];
-    try {
-      const epmcRes = await fetch(
-        `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(q)}&format=json&pageSize=10&page=${page}`
-      );
-      epmcData = await epmcRes.json();
+    const crossrefData = crossref?.message?.items || [];
+    const openalexData = openalex?.results || [];
+    const semanticData = semantic?.data || [];
+    const doaj = doajData?.results || [];
+    const europepmc = epmcData?.resultList?.result || [];
+    const datacite = dcData?.data || [];
+    const zenodo = zenData?.hits?.hits || [];
 
-      europepmc = (epmcData?.resultList?.result || []).map(item => ({
-        title: item.title,
-        authors: item.authorString,
-        journal: item.journalTitle,
-        volume: item.volume,
-        issue: item.issue,
-        issn: item.issn,
-        year: item.pubYear,
-        doi: item.doi,
-        link: item.doi
-          ? `https://doi.org/${item.doi}`
-          : `https://europepmc.org/article/${item.source}/${item.id}`
-      }));
-
-    } catch (e) {
-      console.log("Europe PMC error");
-    }
-
-
-    // =========================
-    // DATACITE
-    // =========================
-    let datacite = [];
-    try {
-      const dcRes = await fetch(
-        `https://api.datacite.org/dois?query=${encodeURIComponent(q)}&page[size]=10&page[number]=${page}`
-      );
-      dcData = await dcRes.json();
-
-      datacite = (dcData?.data || []).map(item => ({
-        title: item.attributes?.titles?.[0]?.title,
-        authors: item.attributes?.creators?.map(a => a.name).join(", "),
-        journal: item.attributes?.publisher,
-        year: item.attributes?.publicationYear,
-        doi: item.attributes?.doi,
-        link: item.attributes?.url || `https://doi.org/${item.attributes?.doi}`
-      }));
-
-    } catch (e) {
-      console.log("DataCite error");
-    }
-
-
-    // =========================
-    // ZENODO
-    // =========================
-    let zenodo = [];
-    try {
-      const zenRes = await fetch(
-        `https://zenodo.org/api/records?q=${encodeURIComponent(q)}&size=10&page=${page}`
-      );
-      zenData = await zenRes.json();
-
-      zenodo = (zenData?.hits?.hits || []).map(item => ({
-        title: item.metadata?.title,
-        authors: item.metadata?.creators?.map(a => a.name).join(", "),
-        journal: item.metadata?.publication_type,
-        year: item.metadata?.publication_date?.substring(0,4),
-        doi: item.metadata?.doi,
-        link: item.links?.doi || item.links?.html
-      }));
-
-    } catch (e) {
-      console.log("Zenodo error");
-    }
-
-
-    // =========================
-    // REMOVE DUPLICATE (DOI)
-    // =========================
-    const uniqueDOI = new Set();
-    function removeDuplicate(arr){
-      return arr.filter(item=>{
-        if(!item.doi) return true;
-        const clean = item.doi.replace(/^https?:\/\/doi\.org\//,'').toLowerCase();
-        if(uniqueDOI.has(clean)) return false;
-        uniqueDOI.add(clean);
-        return true;
-      });
-    }
-
-
-    // =========================
-    // EXACT MATCH FIRST
-    // =========================
-    function exactFirst(arr){
-      const queryLower = q.toLowerCase().trim();
-      return arr.sort((a,b)=>{
-        const aTitle = (a.title||"").toLowerCase().trim();
-        const bTitle = (b.title||"").toLowerCase().trim();
-        const aExact = aTitle === queryLower;
-        const bExact = bTitle === queryLower;
-        if(aExact && !bExact) return -1;
-        if(!aExact && bExact) return 1;
-        return 0;
-      });
-    }
-
-
-    // =========================
-    // TOTAL COUNT
-    // =========================
+    // 🔹 Total Count (fast + safe)
     const grandTotal =
       Number(crossref?.message?.["total-results"] || 0) +
       Number(openalex?.meta?.count || 0) +
       Number(semantic?.total || 0) +
-      Number(searchData?.esearchresult?.count || 0) +
+      Number(pubmedSearch?.esearchresult?.count || 0) +
       Number(epmcData?.hitCount || 0) +
       Number(dcData?.meta?.total || 0) +
-      Number(zenData?.hits?.total?.value || 0) +
-      Number(doaj?.length || 0);
+      Number(zenData?.hits?.total?.value || 0);
 
-
-    // =========================
-    // FINAL RESPONSE
-    // =========================
     res.status(200).json({
-      crossref: exactFirst(removeDuplicate(crossref?.message?.items || [])),
-      openalex: exactFirst(removeDuplicate(openalex?.results || [])),
-      semantic: exactFirst(removeDuplicate(semantic?.data || [])),
-      doaj: exactFirst(removeDuplicate(doaj)),
-      arxiv: exactFirst(removeDuplicate(arxiv)),
-      pubmed: exactFirst(removeDuplicate(pubmed)),
-      europepmc: exactFirst(removeDuplicate(europepmc)),
-      datacite: exactFirst(removeDuplicate(datacite)),
-      zenodo: exactFirst(removeDuplicate(zenodo)),
+      crossref: crossrefData,
+      openalex: openalexData,
+      semantic: semanticData,
+      doaj: doaj,
+      arxiv: [],   // temporarily disabled heavy parsing
+      pubmed: [],
+      europepmc: europepmc,
+      datacite: datacite,
+      zenodo: zenodo,
       totalResults: grandTotal
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("SERVER ERROR:", error);
     res.status(500).json({ error: "Fetch failed" });
   }
 }
