@@ -388,7 +388,8 @@ let currentPage = 1;
 let articleCount = 0;
 let allResults = [];
 let currentSort = "default";
-let totalPages = 5; // চাইলে পরে API থেকে dynamic করা যাবে
+let totalLoadedArticles = 0;
+let isLoading = false;
 
 
 // =======================
@@ -396,15 +397,21 @@ let totalPages = 5; // চাইলে পরে API থেকে dynamic কর
 // =======================
 async function loadResults(reset = false){
 
+  if(isLoading) return;
+  isLoading = true;
+
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
   if(!query) return;
 
   if(reset){
-    articleCount = 0;
     allResults = [];
     document.getElementById("journalResults").innerHTML = "";
+    totalLoadedArticles = 0;
+    articleCount = 0;
   }
+
+  showLoading(true);
 
   try{
 
@@ -423,16 +430,20 @@ async function loadResults(reset = false){
       {name:"Zenodo", data:data.zenodo}
     ];
 
+    let pageResultCount = 0;
+
     sources.forEach(source=>{
 
-      // ===== DOAJ SPECIAL HANDLE =====
       if(source.name === "DOAJ"){
+
         (source.data || []).forEach(item=>{
+          pageResultCount++;
           articleCount++;
+          totalLoadedArticles++;
 
           const bib = item.bibjson || {};
 
-          const articleData = {
+          allResults.push({
             number: articleCount,
             source: "DOAJ",
             title: bib.title || "No Title",
@@ -444,61 +455,63 @@ async function loadResults(reset = false){
             year: bib.year || "",
             doi: bib.identifier?.find(id=>id.type==="doi")?.id || "",
             articleUrl: bib.link?.[0]?.url || ""
-          };
+          });
 
-          allResults.push(articleData);
         });
 
       } else {
 
-        // ===== OTHER DATABASES =====
         (source.data || []).forEach(item=>{
+          pageResultCount++;
           articleCount++;
+          totalLoadedArticles++;
 
-          const articleData = {
+          allResults.push({
             number: articleCount,
             source: source.name,
             title: item.title || item.title?.[0] || "No Title",
-            authors: item.authors || 
+            authors: item.authors ||
                      item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
-            journal: item.journal || 
+            journal: item.journal ||
                      item['container-title']?.[0] || "N/A",
             volume: item.volume || "",
             issue: item.issue || "",
             issn: item.issn || item.ISSN?.join(", ") || "",
-            year: item.year || item.publication_year || 
+            year: item.year || item.publication_year ||
                   item.created?.["date-parts"]?.[0]?.[0] || "",
             doi: item.doi || item.DOI || "",
-            articleUrl: item.link || item.url || 
+            articleUrl: item.link || item.url ||
                         (item.DOI ? `https://doi.org/${item.DOI}` : "")
-          };
+          });
 
-          allResults.push(articleData);
         });
 
       }
 
     });
 
-    if(currentSort !== "default"){
-      sortResults(currentSort);
-    } else {
-      renderAllResults();
+    if(pageResultCount === 0){
+      currentPage--; // no more pages
     }
 
+    applySort();
+    renderAllResults();
     renderPagination();
+    updateTotalCount();
 
   } catch(error){
     console.error(error);
   }
+
+  showLoading(false);
+  isLoading = false;
 }
 
 
 // =======================
-// RENDER ALL RESULTS
+// RENDER
 // =======================
 function renderAllResults(){
-
   const resultDiv = document.getElementById("journalResults");
   resultDiv.innerHTML = "";
 
@@ -510,18 +523,12 @@ function renderAllResults(){
 
 
 // =======================
-// CARD TEMPLATE
+// CARD
 // =======================
 function renderCard(data){
 
   let cleanDoi = data.doi?.replace(/^https?:\/\/doi\.org\//,'') || "";
-
-  let readLink = "";
-  if(cleanDoi){
-    readLink = "https://doi.org/" + cleanDoi;
-  } else if(data.articleUrl){
-    readLink = data.articleUrl;
-  }
+  let readLink = cleanDoi ? "https://doi.org/" + cleanDoi : data.articleUrl;
 
   return `
   <div class="result-card">
@@ -562,25 +569,15 @@ function renderCard(data){
 
 
 // =======================
-// SORTING
+// SORT
 // =======================
-function sortResults(type){
-
-  currentSort = type;
-
-  if(type === "newest"){
-    allResults.sort((a,b)=> (parseInt(b.year)||0) - (parseInt(a.year)||0));
+function applySort(){
+  if(currentSort === "newest"){
+    allResults.sort((a,b)=> (parseInt(b.year)||0)-(parseInt(a.year)||0));
   }
-
-  if(type === "oldest"){
-    allResults.sort((a,b)=> (parseInt(a.year)||0) - (parseInt(b.year)||0));
+  if(currentSort === "oldest"){
+    allResults.sort((a,b)=> (parseInt(a.year)||0)-(parseInt(b.year)||0));
   }
-
-  if(type === "default"){
-    allResults.sort((a,b)=> a.number - b.number);
-  }
-
-  renderAllResults();
 }
 
 
@@ -588,32 +585,13 @@ function sortResults(type){
 // PAGINATION
 // =======================
 function renderPagination(){
-
   const paginationDiv = document.getElementById("pagination");
-  paginationDiv.innerHTML = "";
 
-  let html = "";
-
-  if(currentPage > 1){
-    html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
-  }
-
-  for(let i=1; i<=totalPages; i++){
-    html += `
-      <button 
-        onclick="changePage(${i})"
-        style="margin:5px;padding:6px 12px;
-        ${i===currentPage ? 'background:#0a2a66;color:white;' : ''}">
-        ${i}
-      </button>
-    `;
-  }
-
-  if(currentPage < totalPages){
-    html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
-  }
-
-  paginationDiv.innerHTML = html;
+  paginationDiv.innerHTML = `
+    <button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Prev</button>
+    <span style="margin:0 15px;font-weight:600;">Page ${currentPage}</span>
+    <button onclick="changePage(${currentPage+1})">Next</button>
+  `;
 }
 
 
@@ -621,14 +599,49 @@ function renderPagination(){
 // PAGE CHANGE
 // =======================
 function changePage(page){
-
-  if(page < 1 || page > totalPages) return;
-
+  if(page < 1) return;
   currentPage = page;
-  allResults = [];
-  articleCount = 0;
+  loadResults();
+}
 
-  loadResults(true);
+
+// =======================
+// LOADING
+// =======================
+function showLoading(show){
+
+  let box = document.getElementById("loadingBox");
+
+  if(!box){
+    box = document.createElement("div");
+    box.id = "loadingBox";
+    box.style.textAlign = "center";
+    box.style.fontWeight = "600";
+    box.style.margin = "15px";
+    document.querySelector(".results-container").prepend(box);
+  }
+
+  box.innerHTML = show ? "Loading results..." : "";
+}
+
+
+// =======================
+// TOTAL COUNT
+// =======================
+function updateTotalCount(){
+
+  let countBox = document.getElementById("totalCount");
+
+  if(!countBox){
+    countBox = document.createElement("div");
+    countBox.id = "totalCount";
+    countBox.style.textAlign = "center";
+    countBox.style.fontWeight = "600";
+    countBox.style.margin = "10px 0";
+    document.querySelector(".results-container").prepend(countBox);
+  }
+
+  countBox.innerHTML = "Total Articles Loaded: " + totalLoadedArticles;
 }
 
 
@@ -636,7 +649,9 @@ function changePage(page){
 // SORT DROPDOWN
 // =======================
 document.getElementById("sortSelect").addEventListener("change", function(){
-  sortResults(this.value);
+  currentSort = this.value;
+  applySort();
+  renderAllResults();
 });
 
 
@@ -678,6 +693,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
