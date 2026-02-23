@@ -302,12 +302,19 @@ const grandTotal =
   Number(dataciteTotal) +
   Number(zenodoTotal);
 
-    function exactFirst(arr){
+   function exactFirst(arr){
+
+  if(!Array.isArray(arr)) return [];
+
   const queryLower = q.toLowerCase().trim();
 
   return arr.sort((a,b)=>{
-    const aExact = a.title?.toLowerCase().trim() === queryLower;
-    const bExact = b.title?.toLowerCase().trim() === queryLower;
+
+    const aTitle = (a.title || "").toLowerCase().trim();
+    const bTitle = (b.title || "").toLowerCase().trim();
+
+    const aExact = aTitle === queryLower;
+    const bExact = bTitle === queryLower;
 
     if(aExact && !bExact) return -1;
     if(!aExact && bExact) return 1;
@@ -316,28 +323,29 @@ const grandTotal =
 }
     
    res.status(200).json({
+
   crossref: exactFirst(
-  removeDuplicate(crossref?.message?.items || [])
-),
-     
-openalex: exactFirst(
-  removeDuplicate(openalex?.results || []).map(item => ({
-    ...item,
-    link: item.doi
-      ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
-      : item.primary_location?.landing_page_url
-        ? item.primary_location.landing_page_url
-        : item.id
-  }))
-),
-     
-  semantic: removeDuplicate(semantic?.data || []),
-  doaj: removeDuplicate(doaj || []),
-  arxiv: removeDuplicate(arxiv || []),
-  pubmed: removeDuplicate(pubmed || []),
-  europepmc: removeDuplicate(europepmc || []),
-  datacite: removeDuplicate(datacite || []),
-  zenodo: removeDuplicate(zenodo || []),
+    removeDuplicate(crossref?.message?.items || [])
+  ),
+
+  openalex: exactFirst(
+    removeDuplicate(openalex?.results || []).map(item => ({
+      ...item,
+      link: item.doi
+        ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
+        : item.primary_location?.landing_page_url
+          ? item.primary_location.landing_page_url
+          : item.id
+    }))
+  ),
+
+  semantic: exactFirst(removeDuplicate(semantic?.data || [])),
+  doaj: exactFirst(removeDuplicate(doaj || [])),
+  arxiv: exactFirst(removeDuplicate(arxiv || [])),
+  pubmed: exactFirst(removeDuplicate(pubmed || [])),
+  europepmc: exactFirst(removeDuplicate(europepmc || [])),
+  datacite: exactFirst(removeDuplicate(datacite || [])),
+  zenodo: exactFirst(removeDuplicate(zenodo || [])),
 
   totalResults: grandTotal
 });
