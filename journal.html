@@ -385,186 +385,114 @@ document.addEventListener("click", function(event){
 <script>
 
 let currentPage = 1;
-let articleCount = 0;
-let allResults = [];
+let perPage = 10;
+let totalResults = 0;
+let totalPages = 0;
+let currentResults = [];
 let currentSort = "default";
-let totalLoadedArticles = 0;
-let isLoading = false;
 
 
 // =======================
 // LOAD RESULTS
 // =======================
-async function loadResults(reset = false){
-
-  if(isLoading) return;
-  isLoading = true;
+async function loadResults(){
 
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
   if(!query) return;
 
-  if(reset){
-    allResults = [];
-    document.getElementById("journalResults").innerHTML = "";
-    totalLoadedArticles = 0;
-    articleCount = 0;
-  }
-
   showLoading(true);
 
-  try{
+  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+  const data = await response.json();
 
-    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-    const data = await response.json();
+  totalResults = data.totalResults || 0;
+  totalPages = Math.ceil(totalResults / perPage);
 
-    const sources = [
-      {name:"Crossref", data:data.crossref},
-      {name:"OpenAlex", data:data.openalex},
-      {name:"Semantic Scholar", data:data.semantic},
-      {name:"DOAJ", data:data.doaj},
-      {name:"arXiv", data:data.arxiv},
-      {name:"PubMed", data:data.pubmed},
-      {name:"Europe PMC", data:data.europepmc},
-      {name:"DataCite", data:data.datacite},
-      {name:"Zenodo", data:data.zenodo}
-    ];
+  currentResults = [];
 
-    let pageResultCount = 0;
+  const sources = [
+    {name:"Crossref", data:data.crossref},
+    {name:"OpenAlex", data:data.openalex},
+    {name:"Semantic Scholar", data:data.semantic},
+    {name:"DOAJ", data:data.doaj},
+    {name:"arXiv", data:data.arxiv},
+    {name:"PubMed", data:data.pubmed},
+    {name:"Europe PMC", data:data.europepmc},
+    {name:"DataCite", data:data.datacite},
+    {name:"Zenodo", data:data.zenodo}
+  ];
 
-    sources.forEach(source=>{
-
-      if(source.name === "DOAJ"){
-
-        (source.data || []).forEach(item=>{
-          pageResultCount++;
-          articleCount++;
-          totalLoadedArticles++;
-
-          const bib = item.bibjson || {};
-
-          allResults.push({
-            number: articleCount,
-            source: "DOAJ",
-            title: bib.title || "No Title",
-            authors: bib.author?.map(a=>a.name).join(", ") || "N/A",
-            journal: bib.journal?.title || "N/A",
-            volume: bib.journal?.volume || "",
-            issue: bib.journal?.number || "",
-            issn: bib.journal?.issn?.join(", ") || "",
-            year: bib.year || "",
-            doi: bib.identifier?.find(id=>id.type==="doi")?.id || "",
-            articleUrl: bib.link?.[0]?.url || ""
-          });
-
-        });
-
-      } else {
-
-        (source.data || []).forEach(item=>{
-          pageResultCount++;
-          articleCount++;
-          totalLoadedArticles++;
-
-          allResults.push({
-            number: articleCount,
-            source: source.name,
-            title: item.title || item.title?.[0] || "No Title",
-            authors: item.authors ||
-                     item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
-            journal: item.journal ||
-                     item['container-title']?.[0] || "N/A",
-            volume: item.volume || "",
-            issue: item.issue || "",
-            issn: item.issn || item.ISSN?.join(", ") || "",
-            year: item.year || item.publication_year ||
-                  item.created?.["date-parts"]?.[0]?.[0] || "",
-            doi: item.doi || item.DOI || "",
-            articleUrl: item.link || item.url ||
-                        (item.DOI ? `https://doi.org/${item.DOI}` : "")
-          });
-
-        });
-
-      }
-
+  sources.forEach(source=>{
+    (source.data || []).forEach(item=>{
+      currentResults.push({
+        source: source.name,
+        title: item.title || item.title?.[0] || "No Title",
+        authors: item.authors ||
+                 item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
+        journal: item.journal ||
+                 item['container-title']?.[0] || "N/A",
+        year: item.year || item.publication_year ||
+              item.created?.["date-parts"]?.[0]?.[0] || "",
+        doi: item.doi || item.DOI || "",
+        link: item.link || item.url ||
+              (item.DOI ? `https://doi.org/${item.DOI}` : "")
+      });
     });
+  });
 
-    if(pageResultCount === 0){
-      currentPage--; // no more pages
-    }
-
-    applySort();
-    renderAllResults();
-    renderPagination();
-    updateTotalCount();
-
-  } catch(error){
-    console.error(error);
-  }
+  applySort();
+  renderResults();
+  renderPagination();
+  renderTotal();
 
   showLoading(false);
-  isLoading = false;
 }
 
 
 // =======================
-// RENDER
+// RENDER RESULTS
 // =======================
-function renderAllResults(){
-  const resultDiv = document.getElementById("journalResults");
-  resultDiv.innerHTML = "";
+function renderResults(){
 
-  allResults.forEach((item,index)=>{
-    item.number = index + 1;
-    resultDiv.innerHTML += renderCard(item);
-  });
-}
+  const container = document.getElementById("journalResults");
+  container.innerHTML = "";
 
+  const startNumber = (currentPage - 1) * perPage;
 
-// =======================
-// CARD
-// =======================
-function renderCard(data){
+  currentResults.slice(0,10).forEach((item,index)=>{
 
-  let cleanDoi = data.doi?.replace(/^https?:\/\/doi\.org\//,'') || "";
-  let readLink = cleanDoi ? "https://doi.org/" + cleanDoi : data.articleUrl;
+    const number = startNumber + index + 1;
 
-  return `
-  <div class="result-card">
-    <div class="result-source">
-      #${data.number} • ${data.source}
-    </div>
+    container.innerHTML += `
+      <div class="result-card">
+        <div class="result-source">
+          #${number} • ${item.source}
+        </div>
 
-    <div class="result-title">
-      ${data.title}
-    </div>
+        <div class="result-title">${item.title}</div>
 
-    <div class="result-meta"><strong>Authors:</strong> ${data.authors}</div>
-    <div class="result-meta"><strong>Journal:</strong> ${data.journal}</div>
-    <div class="result-meta">
-      <strong>Volume:</strong> ${data.volume || "N/A"} |
-      <strong>Issue:</strong> ${data.issue || "N/A"}
-    </div>
-    <div class="result-meta"><strong>ISSN:</strong> ${data.issn || "N/A"}</div>
-    <div class="result-meta"><strong>Year:</strong> ${data.year || "N/A"}</div>
+        <div class="result-meta"><strong>Authors:</strong> ${item.authors}</div>
+        <div class="result-meta"><strong>Journal:</strong> ${item.journal}</div>
+        <div class="result-meta"><strong>Year:</strong> ${item.year || "N/A"}</div>
 
-    ${cleanDoi ? `
-      <div class="result-meta">
-        <strong>DOI:</strong>
-        <a href="https://doi.org/${cleanDoi}" target="_blank">
-          ${cleanDoi}
-        </a>
+        ${item.doi ? `
+          <div class="result-meta">
+            <strong>DOI:</strong>
+            <a href="https://doi.org/${item.doi}" target="_blank">
+              ${item.doi}
+            </a>
+          </div>
+        ` : ""}
+
+        ${item.link ? `
+          <a href="${item.link}" target="_blank" class="read-btn">
+            Visit Article →
+          </a>
+        ` : ""}
       </div>
-    ` : ""}
-
-    ${readLink ? `
-      <a href="${readLink}" target="_blank" class="read-btn">
-        Visit Article →
-      </a>
-    ` : ""}
-  </div>
-  `;
+    `;
+  });
 }
 
 
@@ -572,11 +500,13 @@ function renderCard(data){
 // SORT
 // =======================
 function applySort(){
+
   if(currentSort === "newest"){
-    allResults.sort((a,b)=> (parseInt(b.year)||0)-(parseInt(a.year)||0));
+    currentResults.sort((a,b)=> (parseInt(b.year)||0)-(parseInt(a.year)||0));
   }
+
   if(currentSort === "oldest"){
-    allResults.sort((a,b)=> (parseInt(a.year)||0)-(parseInt(b.year)||0));
+    currentResults.sort((a,b)=> (parseInt(a.year)||0)-(parseInt(b.year)||0));
   }
 }
 
@@ -585,23 +515,60 @@ function applySort(){
 // PAGINATION
 // =======================
 function renderPagination(){
-  const paginationDiv = document.getElementById("pagination");
 
-  paginationDiv.innerHTML = `
-    <button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Prev</button>
-    <span style="margin:0 15px;font-weight:600;">Page ${currentPage}</span>
-    <button onclick="changePage(${currentPage+1})">Next</button>
-  `;
+  const pagination = document.getElementById("pagination");
+  pagination.innerHTML = "";
+
+  let html = "";
+
+  if(currentPage > 1){
+    html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
+  }
+
+  for(let i=1; i<=totalPages; i++){
+    html += `
+      <button onclick="changePage(${i})"
+        style="margin:5px; ${i===currentPage?'background:#0a2a66;color:white;':''}">
+        ${i}
+      </button>
+    `;
+  }
+
+  if(currentPage < totalPages){
+    html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
+  }
+
+  pagination.innerHTML = html;
 }
 
 
 // =======================
-// PAGE CHANGE
+// CHANGE PAGE
 // =======================
 function changePage(page){
-  if(page < 1) return;
+  if(page < 1 || page > totalPages) return;
   currentPage = page;
   loadResults();
+}
+
+
+// =======================
+// TOTAL RESULT
+// =======================
+function renderTotal(){
+
+  let box = document.getElementById("totalBox");
+
+  if(!box){
+    box = document.createElement("div");
+    box.id = "totalBox";
+    box.style.textAlign = "center";
+    box.style.fontWeight = "600";
+    box.style.margin = "15px 0";
+    document.querySelector(".results-container").prepend(box);
+  }
+
+  box.innerHTML = "Total Articles Found: " + totalResults;
 }
 
 
@@ -617,31 +584,11 @@ function showLoading(show){
     box.id = "loadingBox";
     box.style.textAlign = "center";
     box.style.fontWeight = "600";
-    box.style.margin = "15px";
+    box.style.margin = "10px";
     document.querySelector(".results-container").prepend(box);
   }
 
-  box.innerHTML = show ? "Loading results..." : "";
-}
-
-
-// =======================
-// TOTAL COUNT
-// =======================
-function updateTotalCount(){
-
-  let countBox = document.getElementById("totalCount");
-
-  if(!countBox){
-    countBox = document.createElement("div");
-    countBox.id = "totalCount";
-    countBox.style.textAlign = "center";
-    countBox.style.fontWeight = "600";
-    countBox.style.margin = "10px 0";
-    document.querySelector(".results-container").prepend(countBox);
-  }
-
-  countBox.innerHTML = "Total Articles Loaded: " + totalLoadedArticles;
+  box.innerHTML = show ? "Loading..." : "";
 }
 
 
@@ -651,14 +598,14 @@ function updateTotalCount(){
 document.getElementById("sortSelect").addEventListener("change", function(){
   currentSort = this.value;
   applySort();
-  renderAllResults();
+  renderResults();
 });
 
 
 // =======================
 // INITIAL LOAD
 // =======================
-loadResults(true);
+loadResults();
 
 </script>
 
@@ -693,6 +640,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
