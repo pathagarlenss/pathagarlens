@@ -304,19 +304,21 @@ a{
 
 <!-- Search -->
 <div class="search-section">
-  <form action="journal.html" method="GET">
+  <form action="journal.html" method="GET" style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;">
+
     <input type="text" name="q" placeholder="Search journals..." required>
+
     <button type="submit">Search</button>
+
+    <select id="sortSelect" style="padding:12px; border-radius:6px;">
+      <option value="default">Sort: Default</option>
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+    </select>
+
   </form>
 </div>
 
-<div style="text-align:right; max-width:1000px; margin:20px auto;">
-  <select id="sortSelect" style="padding:8px 12px; border-radius:6px;">
-    <option value="default">Sort: Default</option>
-    <option value="newest">Newest First</option>
-    <option value="oldest">Oldest First</option>
-  </select>
-</div>
 
   
 <!-- Results -->
@@ -722,6 +724,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
