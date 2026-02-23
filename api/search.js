@@ -3,21 +3,34 @@ export default async function handler(req, res) {
   const { q, page = 1 } = req.query;
   if (!q) return res.status(400).json({ error: "Missing query" });
 
-  const perPage = 10;
-  const offset = (page - 1) * perPage;
+  const perPage = 10;          // final display per page
+  const fetchLimit = 50;       // per database fetch size
+  const currentPage = Number(page) || 1;
 
   try {
 
+    // =========================
+    // PARALLEL FETCH
+    // =========================
     const requests = await Promise.allSettled([
-      fetch(`https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=${perPage}&offset=${offset}`),
-      fetch(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${perPage}&page=${page}`),
-      fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=${perPage}&offset=${offset}&fields=title,authors,year,url,externalIds,venue`),
-      fetch(`https://doaj.org/api/v2/search/articles?q=${encodeURIComponent(q)}&page=${page}&pageSize=10`),
-      fetch(`https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=${offset}&max_results=10`),
-      fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmax=10&retstart=${offset}&retmode=json`),
-      fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(q)}&format=json&pageSize=10&page=${page}`),
-      fetch(`https://api.datacite.org/dois?query=${encodeURIComponent(q)}&page[size]=10&page[number]=${page}`),
-      fetch(`https://zenodo.org/api/records?q=${encodeURIComponent(q)}&size=${perPage}&page=${page}`)
+
+      fetch(`https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=${fetchLimit}`),
+
+      fetch(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${fetchLimit}`),
+
+      fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=${fetchLimit}&fields=title,authors,year,url,externalIds,venue`),
+
+      fetch(`https://doaj.org/api/v2/search/articles?q=${encodeURIComponent(q)}&pageSize=${fetchLimit}`),
+
+      fetch(`https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(q)}&start=0&max_results=${fetchLimit}`),
+
+      fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(q)}&retmax=${fetchLimit}&retmode=json`),
+
+      fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(q)}&format=json&pageSize=${fetchLimit}`),
+
+      fetch(`https://api.datacite.org/dois?query=${encodeURIComponent(q)}&page[size]=${fetchLimit}`),
+
+      fetch(`https://zenodo.org/api/records?q=${encodeURIComponent(q)}&size=${fetchLimit}`)
     ]);
 
     const safeJson = async (r) => {
@@ -28,25 +41,14 @@ export default async function handler(req, res) {
       return {};
     };
 
-    const [
-      crossref,
-      openalex,
-      semantic,
-      doajData,
-      pubmedSearch,
-      epmcData,
-      dcData,
-      zenData
-    ] = await Promise.all([
-      safeJson(requests[0]),
-      safeJson(requests[1]),
-      safeJson(requests[2]),
-      safeJson(requests[3]),
-      safeJson(requests[5]),
-      safeJson(requests[6]),
-      safeJson(requests[7]),
-      safeJson(requests[8])
-    ]);
+    const crossref = await safeJson(requests[0]);
+    const openalex = await safeJson(requests[1]);
+    const semantic = await safeJson(requests[2]);
+    const doajData = await safeJson(requests[3]);
+    const pubmedSearch = await safeJson(requests[5]);
+    const epmcData = await safeJson(requests[6]);
+    const dcData = await safeJson(requests[7]);
+    const zenData = await safeJson(requests[8]);
 
     // =========================
     // ARXIV PARSE
@@ -59,7 +61,6 @@ export default async function handler(req, res) {
         const entries = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
         arxiv = entries.map(entry => {
-
           const extract = (tag) => {
             const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
             return match ? match[1].replace(/\s+/g,' ').trim() : "";
@@ -116,7 +117,7 @@ export default async function handler(req, res) {
     } catch {}
 
     // =========================
-    // FORMAT DATABASES
+    // FORMAT ALL DATABASES
     // =========================
 
     const crossrefData = (crossref?.message?.items || []).map(item => ({
@@ -228,9 +229,17 @@ export default async function handler(req, res) {
       return 0;
     });
 
+    // =========================
+    // MERGED LEVEL PAGINATION
+    // =========================
+    const totalResults = allResults.length;
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const paginatedResults = allResults.slice(start, end);
+
     res.status(200).json({
-      results: allResults,
-      totalResults: allResults.length
+      results: paginatedResults,
+      totalResults: totalResults
     });
 
   } catch (error) {
