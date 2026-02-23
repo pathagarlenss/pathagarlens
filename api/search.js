@@ -1,12 +1,22 @@
 export default async function handler(req, res) {
 
   const { q, page = 1 } = req.query;
-  if (!q) return res.status(400).json({ error: "Missing query" });
+
+  if (!q) {
+    return res.status(400).json({ error: "Missing query" });
+  }
+
+  const MAX_PAGE = 500;
+
+  if (Number(page) > MAX_PAGE) {
+    return res.status(200).json({
+      results: []
+    });
+  }
 
   const perPage = 10;
   const fetchLimit = 50;
   const currentPage = Number(page) || 1;
-
   try {
 
     const requests = await Promise.allSettled([
