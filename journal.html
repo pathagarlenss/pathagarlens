@@ -386,6 +386,7 @@ document.addEventListener("click", function(event){
 let currentPage = 1;
 let articleCount = 0;
 let loading = false;
+let allResults = [];  
 
 async function loadResults(reset = false){
 
@@ -396,6 +397,7 @@ async function loadResults(reset = false){
   if(reset){
     currentPage = 1;
     articleCount = 0;
+    allResults = [];
     document.getElementById("journalResults").innerHTML = "";
   }
 
@@ -438,7 +440,8 @@ async function loadResults(reset = false){
       if(crossref[i]){
         const item = crossref[i];
         articleCount++;
-        html += renderCard({
+        
+       const articleData = {
           number: articleCount,
           source: "Crossref",
           title: item.title?.[0],
@@ -452,13 +455,16 @@ async function loadResults(reset = false){
           keywords: "",
           doi: item.DOI,
           articleUrl: item.DOI ? `https://doi.org/${item.DOI}` : ""
-        });
+        };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
 
       if(openalex[i]){
         const item = openalex[i];
         articleCount++;
-        html += renderCard({
+        
+        const articleData = {
           number: articleCount,
           source: "OpenAlex",
           title: item.title,
@@ -472,13 +478,16 @@ async function loadResults(reset = false){
           keywords: item.concepts?.map(c=>c.display_name).join(", "),
           doi: item.doi,
           articleUrl: item.doi
-        });
+        };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
 
       if(semantic[i]){
         const item = semantic[i];
         articleCount++;
-        html += renderCard({
+        
+       const articleData = {
           number: articleCount,
           source: "Semantic Scholar",
           title: item.title,
@@ -492,14 +501,17 @@ async function loadResults(reset = false){
           keywords: item.keywords?.map(k=>k.name).join(", "),
           doi: item.externalIds?.DOI,
           articleUrl: item.url
-        });
+        };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
 
       if(doaj[i]){
         const item = doaj[i];
         const bib = item.bibjson || {};
         articleCount++;
-        html += renderCard({
+        
+       const articleData = {
           number: articleCount,
           source: "DOAJ",
           title: bib.title,
@@ -513,13 +525,16 @@ async function loadResults(reset = false){
           keywords: bib.keywords?.join(", "),
           doi: bib.identifier?.find(id=>id.type==="doi")?.id,
           articleUrl: bib.link?.[0]?.url
-        });
+        };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
 
       if(arxiv[i]){
         const item = arxiv[i];
         articleCount++;
-        html += renderCard({
+        
+         const articleData = {
           number: articleCount,
           source: "arXiv",
           title: item.title || "arXiv Article",
@@ -533,14 +548,16 @@ async function loadResults(reset = false){
           keywords: "",
           doi: "",
           articleUrl: item.link
-        });
+        };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
 
       if(pubmed[i]){
   const item = pubmed[i];
   articleCount++;
 
-  html += renderCard({
+  const articleData = {
     number: articleCount,
     source: "PubMed",
     title: item.title,
@@ -554,14 +571,16 @@ async function loadResults(reset = false){
     keywords: "",
     doi: item.doi,
     articleUrl: item.link
-  });
+  };
+        allResults.push(articleData);
+        html += renderCard(articleData);
 }
 
   if(europepmc[i]){
   const item = europepmc[i];
   articleCount++;
 
-  html += renderCard({
+  const articleData = {
     number: articleCount,
     source: "Europe PMC",
     title: item.title,
@@ -575,14 +594,16 @@ async function loadResults(reset = false){
     keywords: "",
     doi: item.doi,
     articleUrl: item.link
-  });
+  };
+    allResults.push(articleData);
+        html += renderCard(articleData);
 }
 
 if(datacite[i]){
   const item = datacite[i];
   articleCount++;
 
-  html += renderCard({
+  const articleData = {
     number: articleCount,
     source: "DataCite",
     title: item.title,
@@ -596,14 +617,16 @@ if(datacite[i]){
     keywords: "",
     doi: item.doi,
     articleUrl: item.link
-  });
+  };
+  allResults.push(articleData);
+        html += renderCard(articleData);
 }
 
       if(zenodo[i]){
   const item = zenodo[i];
   articleCount++;
 
-  html += renderCard({
+  const articleData = {
     number: articleCount,
     source: "Zenodo",
     title: item.title,
@@ -617,7 +640,9 @@ if(datacite[i]){
     keywords: "",
     doi: item.doi,
     articleUrl: item.link
-  });
+  };
+        allResults.push(articleData);
+        html += renderCard(articleData);
       }
       
     }
@@ -724,6 +749,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
