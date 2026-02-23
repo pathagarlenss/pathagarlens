@@ -525,13 +525,31 @@ function renderPagination(){
     html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
   }
 
-  for(let i=1; i<=totalPages; i++){
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, currentPage + 2);
+
+  if(startPage > 1){
+    html += `<button onclick="changePage(1)">1</button>`;
+    if(startPage > 2){
+      html += `<span>...</span>`;
+    }
+  }
+
+  for(let i = startPage; i <= endPage; i++){
     html += `
       <button onclick="changePage(${i})"
-        style="margin:5px; ${i===currentPage?'background:#0a2a66;color:white;':''}">
+        style="margin:5px;
+        ${i===currentPage?'background:#0a2a66;color:white;':''}">
         ${i}
       </button>
     `;
+  }
+
+  if(endPage < totalPages){
+    if(endPage < totalPages - 1){
+      html += `<span>...</span>`;
+    }
+    html += `<button onclick="changePage(${totalPages})">${totalPages}</button>`;
   }
 
   if(currentPage < totalPages){
@@ -540,7 +558,6 @@ function renderPagination(){
 
   pagination.innerHTML = html;
 }
-
 
 // =======================
 // CHANGE PAGE
@@ -640,6 +657,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
