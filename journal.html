@@ -384,8 +384,6 @@ document.addEventListener("click", function(event){
 <script>
 let currentPage = 1;
 let perPage = 10;
-let totalResults = 0;
-let totalPages = 0;
 let currentResults = [];
 let currentSort = "default";
 
@@ -400,17 +398,19 @@ async function loadResults(){
   const query = urlParams.get("q");
   if(!query) return;
 
-  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-  const data = await response.json();
+  try{
+    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+    const data = await response.json();
 
-  currentResults = data.results || [];
-  totalResults = data.totalResults || 0;
-  totalPages = Math.ceil(totalResults / perPage);
+    currentResults = data.results || [];
 
-  applySort();
-  renderResults();
-  renderPagination();
-  renderTotal();
+    applySort();
+    renderResults();
+    renderPagination();
+
+  }catch(err){
+    console.error("Fetch error:", err);
+  }
 
   showLoading(false);
 }
@@ -493,14 +493,12 @@ function applySort(){
 }
 
 // =======================
-// PAGINATION
+// PAGINATION (Prev / Next)
 // =======================
 function renderPagination(){
 
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = "";
-
-  if(totalPages <= 1) return;
 
   let html = "";
 
@@ -508,16 +506,7 @@ function renderPagination(){
     html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
   }
 
-  for(let i=1; i<=totalPages; i++){
-    html += `
-      <button onclick="changePage(${i})"
-      style="${i===currentPage?'background:#0a2a66;color:white;':''}">
-      ${i}
-      </button>
-    `;
-  }
-
-  if(currentPage < totalPages){
+  if(currentResults.length === perPage){
     html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
   }
 
@@ -528,28 +517,9 @@ function renderPagination(){
 // CHANGE PAGE
 // =======================
 function changePage(page){
-  if(page < 1 || page > totalPages) return;
+  if(page < 1) return;
   currentPage = page;
   loadResults();
-}
-
-// =======================
-// TOTAL
-// =======================
-function renderTotal(){
-
-  let box = document.getElementById("totalBox");
-
-  if(!box){
-    box = document.createElement("div");
-    box.id = "totalBox";
-    box.style.textAlign = "center";
-    box.style.fontWeight = "600";
-    box.style.margin = "15px 0";
-    document.querySelector(".results-container").prepend(box);
-  }
-
-  box.innerHTML = "Total Articles Found: " + totalResults;
 }
 
 // =======================
@@ -617,6 +587,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
