@@ -727,12 +727,21 @@ document.getElementById("sortSelect").addEventListener("change", function(){
   function sortResults(type){
 
   if(type === "newest"){
-    allResults.sort((a,b) => (b.year || 0) - (a.year || 0));
-  }
+  allResults.sort((a,b) => {
+    const yearA = parseInt(a.year) || 0;
+    const yearB = parseInt(b.year) || 0;
+    return yearB - yearA;
+  });
+}
 
-  if(type === "oldest"){
-    allResults.sort((a,b) => (a.year || 0) - (b.year || 0));
-  }
+if(type === "oldest"){
+  allResults.sort((a,b) => {
+    const yearA = parseInt(a.year) || 0;
+    const yearB = parseInt(b.year) || 0;
+    return yearA - yearB;
+  });
+}
+
 
   if(type === "default"){
     allResults.sort((a,b) => a.number - b.number);
@@ -780,6 +789,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
