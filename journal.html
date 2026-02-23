@@ -87,7 +87,42 @@ a{
   background:#f2f2f2;
 }
 
+/* ===== Search History Dropdown ===== */
 
+#historyList{
+  position:absolute;
+  top:58px;
+  left:0;
+  width:100%;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  display:none;
+  z-index:999;
+  max-height:250px;
+  overflow-y:auto;
+  border:1px solid #eee;
+}
+
+.history-item{
+  padding:12px 15px;
+  cursor:pointer;
+  font-size:14px;
+  transition:0.2s ease;
+}
+
+.history-item:hover{
+  background:#f5f7fa;
+  color:#0a2a66;
+}
+  
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(-5px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+  
 /* Header Section */
 .page-header{
   background:#0a2a66;
@@ -303,37 +338,28 @@ a{
 
 <!-- Search -->
 <div class="search-section">
-  <form action="journal.html" method="GET" style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;">
+<form action="journal.html" method="GET" style="position:relative; width:60%; margin:auto;">
 
-    <input type="text" id="searchInput" name="q" placeholder="Search journals..." required>
-  
-    
-    <div id="historyBox" style="
-  position:relative;
-  max-width:60%;
-  margin:auto;
-">
-  <div id="historyList" style="
-    position:absolute;
-    width:100%;
-    background:white;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-    border-radius:6px;
-    display:none;
-    z-index:999;
-  "></div>
-</div>
+  <input type="text"
+         id="searchInput"
+         name="q"
+         placeholder="Search journals..."
+         required
+         style="width:100%; padding:14px; border-radius:6px; border:1px solid #ddd;">
 
-    
-    <button type="submit">Search</button>
+  <div id="historyList"></div>
 
-    <select id="sortSelect" style="padding:12px; border-radius:6px;">
+  <button type="submit" style="margin-top:10px;">
+    Search
+  </button>
+
+  <select id="sortSelect" style="padding:12px; border-radius:6px;">
       <option value="default">Sort: Default</option>
       <option value="newest">Newest First</option>
       <option value="oldest">Oldest First</option>
-    </select>
+  </select>
+</form>
 
-  </form>
   
 <div id="searchInfo" style="
   margin-top:15px;
@@ -656,7 +682,12 @@ function showHistory(){
 
   if(history.length === 0) return;
 
-  historyList.innerHTML = "";
+  historyList.innerHTML += `
+  <div class="history-item"
+       onclick="selectHistory('${item}')">
+    ${item}
+  </div>
+`;
 
   history.forEach(item=>{
     historyList.innerHTML += `
@@ -735,6 +766,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
