@@ -495,6 +495,9 @@ function applySort(){
 // =======================
 // PAGINATION (Prev / Next)
 // =======================
+<script>
+let visiblePages = 5;   // একসাথে কয়টা page number দেখাবে
+
 function renderPagination(){
 
   const pagination = document.getElementById("pagination");
@@ -502,17 +505,37 @@ function renderPagination(){
 
   let html = "";
 
+  // Prev button
   if(currentPage > 1){
     html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
   }
 
+  // Start page logic (sliding window)
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = startPage + visiblePages - 1;
+
+  for(let i = startPage; i <= endPage; i++){
+    html += `
+      <button 
+        onclick="changePage(${i})"
+        style="
+          margin:5px;
+          padding:6px 12px;
+          ${i===currentPage ? 'background:#0a2a66;color:white;' : ''}
+        ">
+        ${i}
+      </button>
+    `;
+  }
+
+  // Next button (শুধু তখন দেখাবে যখন full 10 result আছে)
   if(currentResults.length === perPage){
     html += `<button onclick="changePage(${currentPage+1})">Next</button>`;
   }
 
   pagination.innerHTML = html;
 }
-
+</script>
 // =======================
 // CHANGE PAGE
 // =======================
@@ -587,6 +610,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
