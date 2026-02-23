@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       console.log("DOAJ failed");
     }
 
-// ARXIV FINAL SAFE VERSION
+// ARXIV FINAL CORRECT VERSION
 
 let arxiv = [];
 
@@ -50,36 +50,30 @@ try {
 
   const xml = await arxivRes.text();
 
-  const entries = xml.split("</entry>");
+  const entryMatches = xml.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
 
-  arxiv = entries
-    .filter(e => e.includes("<entry"))
-    .map(entry => {
+  arxiv = entryMatches.map(entry => {
 
-      const getTag = (tag) => {
-        const start = entry.indexOf(`<${tag}>`);
-        const end = entry.indexOf(`</${tag}>`);
-        if(start === -1 || end === -1) return "";
-        return entry.substring(start + tag.length + 2, end)
-          .replace(/\s+/g,' ')
-          .trim();
-      };
+    const extract = (tag) => {
+      const match = entry.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+      return match ? match[1].replace(/\s+/g,' ').trim() : "";
+    };
 
-      const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
-        .map(a => a[1])
-        .join(", ");
+    const authors = [...entry.matchAll(/<name>(.*?)<\/name>/g)]
+      .map(a => a[1])
+      .join(", ");
 
-      return {
-        title: getTag("title"),
-        abstract: getTag("summary"),
-        authors,
-        year: getTag("published")?.substring(0,4),
-        link: getTag("id"),
-        doi: ""
-      };
-    });
+    return {
+      title: extract("title"),
+      abstract: extract("summary"),
+      authors,
+      year: extract("published")?.substring(0,4),
+      link: extract("id"),
+      doi: ""
+    };
+  });
 
-  console.log("ARXIV COUNT:", arxiv.length);
+  console.log("ARXIV REAL COUNT:", arxiv.length);
 
 } catch (e) {
   console.log("arXiv error:", e);
