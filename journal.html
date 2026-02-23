@@ -390,11 +390,12 @@ let totalPages = 0;
 let currentResults = [];
 let currentSort = "default";
 
-
 // =======================
 // LOAD RESULTS
 // =======================
 async function loadResults(){
+
+  showLoading(true);
 
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
@@ -403,45 +404,9 @@ async function loadResults(){
   const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
   const data = await response.json();
 
-  // 🔥 IMPORTANT LINE
   currentResults = data.results || [];
-  totalArticles = data.totalResults || 0;
-
-  document.getElementById("totalCount").innerText =
-    `Total Articles Found: ${totalArticles}`;
-
-  renderResults();
-  renderPagination();
-}
-  const sources = [
-    {name:"Crossref", data:data.crossref},
-    {name:"OpenAlex", data:data.openalex},
-    {name:"Semantic Scholar", data:data.semantic},
-    {name:"DOAJ", data:data.doaj},
-    {name:"arXiv", data:data.arxiv},
-    {name:"PubMed", data:data.pubmed},
-    {name:"Europe PMC", data:data.europepmc},
-    {name:"DataCite", data:data.datacite},
-    {name:"Zenodo", data:data.zenodo}
-  ];
-
-  sources.forEach(source=>{
-    (source.data || []).forEach(item=>{
-      currentResults.push({
-        source: source.name,
-        title: item.title || item.title?.[0] || "No Title",
-        authors: item.authors ||
-                 item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
-        journal: item.journal ||
-                 item['container-title']?.[0] || "N/A",
-        year: item.year || item.publication_year ||
-              item.created?.["date-parts"]?.[0]?.[0] || "",
-        doi: item.doi || item.DOI || "",
-        link: item.link || item.url ||
-              (item.DOI ? `https://doi.org/${item.DOI}` : "")
-      });
-    });
-  });
+  totalResults = data.totalResults || 0;
+  totalPages = Math.ceil(totalResults / perPage);
 
   applySort();
   renderResults();
@@ -450,7 +415,6 @@ async function loadResults(){
 
   showLoading(false);
 }
-
 
 // =======================
 // RENDER RESULTS
@@ -462,24 +426,24 @@ function renderResults(){
 
   const startNumber = (currentPage - 1) * perPage;
 
-  currentResults.slice(0,10).forEach((item,index)=>{
+  currentResults.slice(0, perPage).forEach((item,index)=>{
 
     const number = startNumber + index + 1;
 
     container.innerHTML += `
       <div class="result-card">
         <div class="result-source">
-          #${number} • ${item.source}
+          #${number}
         </div>
 
-        <div class="result-title">${item.title}</div>
+        <div class="result-title">${item.title || "No Title"}</div>
 
         <div class="result-meta">
           <strong>Authors:</strong> ${formatAuthors(item.authors)}
         </div>
 
         <div class="result-meta">
-          <strong>Journal:</strong> ${item.journal}
+          <strong>Journal:</strong> ${item.journal || "N/A"}
         </div>
 
         <div class="result-meta">
@@ -505,26 +469,14 @@ function renderResults(){
   });
 }
 
-function formatAuthors(authorsString){
-
-  if(!authorsString) return "N/A";
-
-  const authorsArray = authorsString.split(",");
-
-  if(authorsArray.length <= 5){
-    return authorsString;
-  }
-
-  const firstFive = authorsArray.slice(0,5).join(", ");
-  return firstFive + " et al.";
-}
-
-
-  function shuffleArray(array){
-  for (let i = array.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+// =======================
+// AUTHOR FORMAT
+// =======================
+function formatAuthors(authors){
+  if(!authors) return "N/A";
+  const arr = authors.split(",");
+  if(arr.length <= 5) return authors;
+  return arr.slice(0,5).join(", ") + " et al.";
 }
 
 // =======================
@@ -533,7 +485,7 @@ function formatAuthors(authorsString){
 function applySort(){
 
   if(currentSort === "default"){
-    shuffleArray(currentResults);
+    // no shuffle now (keep API order)
   }
 
   if(currentSort === "newest"){
@@ -545,7 +497,6 @@ function applySort(){
   }
 }
 
-
 // =======================
 // PAGINATION
 // =======================
@@ -554,37 +505,21 @@ function renderPagination(){
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = "";
 
+  if(totalPages <= 1) return;
+
   let html = "";
 
   if(currentPage > 1){
     html += `<button onclick="changePage(${currentPage-1})">Prev</button>`;
   }
 
-  let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(totalPages, currentPage + 2);
-
-  if(startPage > 1){
-    html += `<button onclick="changePage(1)">1</button>`;
-    if(startPage > 2){
-      html += `<span>...</span>`;
-    }
-  }
-
-  for(let i = startPage; i <= endPage; i++){
+  for(let i=1; i<=totalPages; i++){
     html += `
       <button onclick="changePage(${i})"
-        style="margin:5px;
-        ${i===currentPage?'background:#0a2a66;color:white;':''}">
-        ${i}
+      style="${i===currentPage?'background:#0a2a66;color:white;':''}">
+      ${i}
       </button>
     `;
-  }
-
-  if(endPage < totalPages){
-    if(endPage < totalPages - 1){
-      html += `<span>...</span>`;
-    }
-    html += `<button onclick="changePage(${totalPages})">${totalPages}</button>`;
   }
 
   if(currentPage < totalPages){
@@ -603,9 +538,8 @@ function changePage(page){
   loadResults();
 }
 
-
 // =======================
-// TOTAL RESULT
+// TOTAL
 // =======================
 function renderTotal(){
 
@@ -622,7 +556,6 @@ function renderTotal(){
 
   box.innerHTML = "Total Articles Found: " + totalResults;
 }
-
 
 // =======================
 // LOADING
@@ -643,7 +576,6 @@ function showLoading(show){
   box.innerHTML = show ? "Loading..." : "";
 }
 
-
 // =======================
 // SORT DROPDOWN
 // =======================
@@ -652,7 +584,6 @@ document.getElementById("sortSelect").addEventListener("change", function(){
   applySort();
   renderResults();
 });
-
 
 // =======================
 // INITIAL LOAD
@@ -692,4 +623,5 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
