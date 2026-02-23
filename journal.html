@@ -401,16 +401,19 @@ async function loadResults(){
   const query = urlParams.get("q");
   if(!query) return;
 
-  showLoading(true);
-
   const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
   const data = await response.json();
 
-  totalResults = data.totalResults || 0;
-  totalPages = Math.ceil(totalResults / perPage);
+  // 🔥 IMPORTANT LINE
+  currentResults = data.results || [];
+  totalArticles = data.totalResults || 0;
 
-  currentResults = [];
+  document.getElementById("totalCount").innerText =
+    `Total Articles Found: ${totalArticles}`;
 
+  renderResults();
+  renderPagination();
+}
   const sources = [
     {name:"Crossref", data:data.crossref},
     {name:"OpenAlex", data:data.openalex},
@@ -690,6 +693,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
