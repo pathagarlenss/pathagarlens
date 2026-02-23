@@ -250,7 +250,6 @@ function removeDuplicate(arr){
       // 🔹 Total result count (pagination এর জন্য)
   totalResults: crossref?.message?.["total-results"] || 0
 });
-});
 
   } catch (error) {
     console.error(error);
