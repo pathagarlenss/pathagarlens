@@ -6,6 +6,11 @@ export default async function handler(req, res) {
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
+  let searchData = {};
+let epmcData = {};
+let dcData = {};
+let zenData = {};
+
   try {
 
     // CROSSREF
@@ -235,8 +240,42 @@ function removeDuplicate(arr){
     }
   });
 }
+
+    // =======================
+// TOTAL COUNT (ALL DATABASE)
+// =======================
+
+const crossrefTotal = crossref?.message?.["total-results"] || 0;
+
+const openalexTotal = openalex?.meta?.count || 0;
+
+const semanticTotal = semantic?.total || 0;
+
+const doajTotal = doaj?.length || 0;  
+// DOAJ official total API থেকে আলাদা আসে না, তাই page count
+
+const pubmedTotal = searchData?.esearchresult?.count || 0;
+
+const europepmcTotal = epmcData?.hitCount || 0;
+
+const dataciteTotal = dcData?.meta?.total || 0;
+
+const zenodoTotal = zenData?.hits?.total?.value || 0;
+
+
+// সব যোগ
+
+const grandTotal =
+  Number(crossrefTotal) +
+  Number(openalexTotal) +
+  Number(semanticTotal) +
+  Number(doajTotal) +
+  Number(pubmedTotal) +
+  Number(europepmcTotal) +
+  Number(dataciteTotal) +
+  Number(zenodoTotal);
     
-    res.status(200).json({
+   res.status(200).json({
   crossref: removeDuplicate(crossref?.message?.items || []),
   openalex: removeDuplicate(openalex?.results || []),
   semantic: removeDuplicate(semantic?.data || []),
@@ -247,9 +286,9 @@ function removeDuplicate(arr){
   datacite: removeDuplicate(datacite || []),
   zenodo: removeDuplicate(zenodo || []),
 
-      // 🔹 Total result count (pagination এর জন্য)
-  totalResults: crossref?.message?.["total-results"] || 0
+  totalResults: grandTotal
 });
+
 
   } catch (error) {
     console.error(error);
