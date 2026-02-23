@@ -382,14 +382,13 @@ document.addEventListener("click", function(event){
 </script>
 
 <script>
-
 let currentPage = 1;
-const perPage = 10;
-const MAX_PAGE = 500;
+let perPage = 10;
+const MAX_PAGE = 500;  
 let currentResults = [];
 let currentSort = "default";
 
-// =======================
+  // =======================
 // SHUFFLE FUNCTION
 // =======================
 function shuffleArray(array){
@@ -399,26 +398,33 @@ function shuffleArray(array){
   }
 }
 
+
 // =======================
 // LOAD RESULTS
 // =======================
 async function loadResults(){
 
+  showLoading(true);
+
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
   if(!query) return;
 
-  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-  const data = await response.json();
+  try{
+    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+    const data = await response.json();
 
-  currentResults = data.results || [];
+    currentResults = data.results || [];
 
-  // 🔥 RANDOM ORDER
-  shuffleArray(currentResults);
+    applySort();
+    renderResults();
+    renderPagination();
 
-  applySort();
-  renderResults();
-  renderPagination();
+  }catch(err){
+    console.error("Fetch error:", err);
+  }
+
+  showLoading(false);
 }
 
 // =======================
@@ -431,14 +437,14 @@ function renderResults(){
 
   const startNumber = (currentPage - 1) * perPage;
 
-  currentResults.slice(0, perPage).forEach((item,index)=>{
+  currentResults.forEach((item,index)=>{
 
     const number = startNumber + index + 1;
 
     container.innerHTML += `
       <div class="result-card">
         <div class="result-source">
-          #${number} • ${item.source || "Unknown Source"}
+          #${number} • ${item.source || "Unknown"}
         </div>
 
         <div class="result-title">${item.title || "No Title"}</div>
@@ -475,19 +481,13 @@ function renderResults(){
 }
 
 // =======================
-// AUTHOR LIMIT (MAX 5)
+// AUTHOR FORMAT
 // =======================
-function formatAuthors(authorsString){
-
-  if(!authorsString) return "N/A";
-
-  const authorsArray = authorsString.split(",");
-
-  if(authorsArray.length <= 5){
-    return authorsString;
-  }
-
-  return authorsArray.slice(0,5).join(", ") + " et al.";
+function formatAuthors(authors){
+  if(!authors) return "N/A";
+  const arr = authors.split(",");
+  if(arr.length <= 5) return authors;
+  return arr.slice(0,5).join(", ") + " et al.";
 }
 
 // =======================
@@ -496,26 +496,26 @@ function formatAuthors(authorsString){
 function applySort(){
 
   if(currentSort === "newest"){
-    currentResults.sort((a,b)=>
-      (parseInt(b.year)||0)-(parseInt(a.year)||0)
-    );
+    currentResults.sort((a,b)=> (parseInt(b.year)||0)-(parseInt(a.year)||0));
   }
 
   if(currentSort === "oldest"){
-    currentResults.sort((a,b)=>
-      (parseInt(a.year)||0)-(parseInt(b.year)||0)
-    );
+    currentResults.sort((a,b)=> (parseInt(a.year)||0)-(parseInt(b.year)||0));
   }
 }
 
 // =======================
-// PAGINATION
+// PAGINATION (Prev / Next)
 // =======================
+
+let visiblePages = 5;   // একসাথে কয়টা page number দেখাবে
+
 function renderPagination(){
 
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = "";
 
+  const MAX_PAGE = 500;
   let html = "";
 
   if(currentPage > 1){
@@ -523,11 +523,7 @@ function renderPagination(){
   }
 
   let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(MAX_PAGE, startPage + 4);
-
-  if(endPage - startPage < 4){
-    startPage = Math.max(1, endPage - 4);
-  }
+  let endPage = Math.min(MAX_PAGE, currentPage + 2);
 
   for(let i = startPage; i <= endPage; i++){
     html += `
@@ -554,11 +550,28 @@ function renderPagination(){
 // CHANGE PAGE
 // =======================
 function changePage(page){
-
-  if(page < 1 || page > MAX_PAGE) return;
-
+  if(page < 1) return;
   currentPage = page;
   loadResults();
+}
+
+// =======================
+// LOADING
+// =======================
+function showLoading(show){
+
+  let box = document.getElementById("loadingBox");
+
+  if(!box){
+    box = document.createElement("div");
+    box.id = "loadingBox";
+    box.style.textAlign = "center";
+    box.style.fontWeight = "600";
+    box.style.margin = "10px";
+    document.querySelector(".results-container").prepend(box);
+  }
+
+  box.innerHTML = show ? "Loading..." : "";
 }
 
 // =======================
@@ -574,7 +587,6 @@ document.getElementById("sortSelect").addEventListener("change", function(){
 // INITIAL LOAD
 // =======================
 loadResults();
-
 </script>
 
   
@@ -608,6 +620,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
