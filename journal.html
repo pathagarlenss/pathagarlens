@@ -89,32 +89,7 @@ a{
 
 /* ===== Search History Dropdown ===== */
 
-#historyList{
-  position:absolute;
-  top:58px;
-  left:0;
-  width:100%;
-  background:white;
-  border-radius:10px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.08);
-  display:none;
-  z-index:999;
-  max-height:250px;
-  overflow-y:auto;
-  border:1px solid #eee;
-}
 
-.history-item{
-  padding:12px 15px;
-  cursor:pointer;
-  font-size:14px;
-  transition:0.2s ease;
-}
-
-.history-item:hover{
-  background:#f5f7fa;
-  color:#0a2a66;
-}
   
 
 @keyframes fadeIn{
@@ -143,7 +118,53 @@ a{
   max-width:900px;
   margin:40px auto;
   padding:0 20px;
-  text-align:center;
+  text-.search-form{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.search-wrapper{
+  position:relative;
+  width:60%;
+}
+
+#searchInput{
+  width:100%;
+  padding:14px;
+  border-radius:6px;
+  border:1px solid #ddd;
+  font-size:16px;
+}
+
+#historyList{
+  position:absolute;
+  top:55px;
+  left:0;
+  width:100%;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.08);
+  display:none;
+  z-index:999;
+  max-height:250px;
+  overflow-y:auto;
+  border:1px solid #eee;
+}
+
+.history-item{
+  padding:12px 15px;
+  cursor:pointer;
+  font-size:14px;
+  transition:0.2s;
+}
+
+.history-item:hover{
+  background:#f5f7fa;
+  color:#0a2a66;
+}align:center;
 }
 .search-section form{
   display:flex;
@@ -339,19 +360,21 @@ a{
 <!-- Search -->
 <div class="search-section">
 <form action="journal.html" method="GET" style="position:relative; width:60%; margin:auto;">
+<form action="journal.html" method="GET" class="search-form">
 
-  <input type="text"
-         id="searchInput"
-         name="q"
-         placeholder="Search journals..."
-         required
-         style="width:100%; padding:14px; border-radius:6px; border:1px solid #ddd;">
+  <div class="search-wrapper">
+    <input type="text"
+           id="searchInput"
+           name="q"
+           placeholder="Search journals..."
+           required>
 
-  <div id="historyList"></div>
+    <div id="historyList"></div>
+  </div>
 
-  <button type="submit" style="margin-top:10px;">
-    Search
-  </button>
+  <button type="submit">Search</button>
+
+</form>
 
   <select id="sortSelect" style="padding:12px; border-radius:6px;">
       <option value="default">Sort: Default</option>
@@ -655,74 +678,64 @@ loadResults();
 // SEARCH HISTORY SYSTEM
 // =======================
 
-const searchInput = document.getElementById("searchInput");
-const historyList = document.getElementById("historyList");
+<script>
 
-function saveSearch(query){
-
-  if(!query) return;
-
-  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
-
-  // duplicate remove
-  history = history.filter(item => item !== query);
-
-  history.unshift(query); // নতুনটা সামনে
-
-  if(history.length > 8){
-    history = history.slice(0,8);
-  }
-
-  localStorage.setItem("searchHistory", JSON.stringify(history));
-}
-
-function showHistory(){
-
-  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
-
-  if(history.length === 0) return;
-
-  historyList.innerHTML += `
-  <div class="history-item"
-       onclick="selectHistory('${item}')">
-    ${item}
-  </div>
-`;
-
-  history.forEach(item=>{
-    historyList.innerHTML += `
-      <div style="
-        padding:10px;
-        cursor:pointer;
-        border-bottom:1px solid #eee;
-      "
-      onclick="selectHistory('${item}')">
-        ${item}
-      </div>
-    `;
-  });
-
-  historyList.style.display = "block";
-}
-
-function selectHistory(value){
-  searchInput.value = value;
-  historyList.style.display = "none";
-  window.location.href = `journal.html?q=${encodeURIComponent(value)}`;
-}
-
-// Hide dropdown when clicking outside
-document.addEventListener("click", function(e){
-  if(!searchInput.contains(e.target)){
-    historyList.style.display = "none";
-  }
-});
-
-// Show history when input focused
-searchInput.addEventListener("focus", showHistory);
-
-// Save current search automatically
 document.addEventListener("DOMContentLoaded", function(){
+
+  const searchInput = document.getElementById("searchInput");
+  const historyList = document.getElementById("historyList");
+
+  if(!searchInput || !historyList) return;
+
+  function saveSearch(query){
+
+    if(!query) return;
+
+    let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+    history = history.filter(item => item !== query);
+
+    history.unshift(query);
+
+    if(history.length > 8){
+      history = history.slice(0,8);
+    }
+
+    localStorage.setItem("searchHistory", JSON.stringify(history));
+  }
+
+  function showHistory(){
+
+    let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+    if(history.length === 0) return;
+
+    historyList.innerHTML = "";
+
+    history.forEach(item=>{
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.textContent = item;
+
+      div.onclick = function(){
+        searchInput.value = item;
+        historyList.style.display = "none";
+        window.location.href = `journal.html?q=${encodeURIComponent(item)}`;
+      };
+
+      historyList.appendChild(div);
+    });
+
+    historyList.style.display = "block";
+  }
+
+  searchInput.addEventListener("focus", showHistory);
+
+  document.addEventListener("click", function(e){
+    if(!searchInput.contains(e.target)){
+      historyList.style.display = "none";
+    }
+  });
 
   const urlParams = new URLSearchParams(window.location.search);
   const query = urlParams.get("q");
@@ -732,6 +745,7 @@ document.addEventListener("DOMContentLoaded", function(){
   }
 
 });
+
 </script>
 
   
@@ -766,6 +780,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
