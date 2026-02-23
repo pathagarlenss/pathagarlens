@@ -6,11 +6,7 @@ export default async function handler(req, res) {
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
-  let searchData = {};
-let epmcData = {};
-let dcData = {};
-let zenData = {};
-  let doajData = {};
+ 
 
   try {
 
@@ -273,24 +269,15 @@ function removeDuplicate(arr){
 // =======================
 
 const crossrefTotal = crossref?.message?.["total-results"] || 0;
-
 const openalexTotal = openalex?.meta?.count || 0;
-
 const semanticTotal = semantic?.total || 0;
 
-const doajTotal = doajData?.length || 0;  
-// DOAJ official total API থেকে আলাদা আসে না, তাই page count
+const pubmedTotal = Number(searchData?.esearchresult?.count || 0);
+const europepmcTotal = Number(epmcData?.hitCount || 0);
+const dataciteTotal = Number(dcData?.meta?.total || 0);
+const zenodoTotal = Number(zenData?.hits?.total?.value || 0);
 
-const pubmedTotal = searchData?.esearchresult?.count || 0;
-
-const europepmcTotal = epmcData?.hitCount || 0;
-
-const dataciteTotal = dcData?.meta?.total || 0;
-
-const zenodoTotal = zenData?.hits?.total?.value || 0;
-
-
-// সব যোগ
+const doajTotal = doaj?.length || 0;
 
 const grandTotal =
   Number(crossrefTotal) +
