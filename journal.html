@@ -648,10 +648,20 @@ if(datacite[i]){
       
     }
 
-    resultDiv.innerHTML += html;
-    if(currentSort !== "default"){
-      sortResults(currentSort);
-    }
+   // নতুন result array-তে already push হয়েছে
+
+if(currentSort !== "default"){
+  sortResults(currentSort);
+} else {
+  const resultDiv = document.getElementById("journalResults");
+  resultDiv.innerHTML = "";
+
+  allResults.forEach((item,index)=>{
+    item.number = index + 1;
+    resultDiv.innerHTML += renderCard(item);
+  });
+}
+
 
     if(!html){
       document.getElementById("loadMoreBtn").innerText = "No More Results";
@@ -794,6 +804,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
