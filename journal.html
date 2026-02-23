@@ -388,8 +388,12 @@ let currentPage = 1;
 let articleCount = 0;
 let allResults = [];
 let currentSort = "default";
-let totalPages = 5;   // চাইলে পরে API থেকে dynamic করা যাবে
+let totalPages = 5; // চাইলে পরে API থেকে dynamic করা যাবে
 
+
+// =======================
+// LOAD RESULTS
+// =======================
 async function loadResults(reset = false){
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -420,29 +424,60 @@ async function loadResults(reset = false){
     ];
 
     sources.forEach(source=>{
-      (source.data || []).forEach(item=>{
-        articleCount++;
 
-        const articleData = {
-          number: articleCount,
-          source: source.name,
-          title: item.title || item.title?.[0] || "No Title",
-          authors: item.authors || 
-                   item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
-          journal: item.journal || 
-                   item['container-title']?.[0] || "N/A",
-          volume: item.volume || "",
-          issue: item.issue || "",
-          issn: item.issn || item.ISSN?.join(", ") || "",
-          year: item.year || item.publication_year || 
-                item.created?.["date-parts"]?.[0]?.[0] || "",
-          doi: item.doi || item.DOI || "",
-          articleUrl: item.link || item.url || 
-                      (item.DOI ? `https://doi.org/${item.DOI}` : "")
-        };
+      // ===== DOAJ SPECIAL HANDLE =====
+      if(source.name === "DOAJ"){
+        (source.data || []).forEach(item=>{
+          articleCount++;
 
-        allResults.push(articleData);
-      });
+          const bib = item.bibjson || {};
+
+          const articleData = {
+            number: articleCount,
+            source: "DOAJ",
+            title: bib.title || "No Title",
+            authors: bib.author?.map(a=>a.name).join(", ") || "N/A",
+            journal: bib.journal?.title || "N/A",
+            volume: bib.journal?.volume || "",
+            issue: bib.journal?.number || "",
+            issn: bib.journal?.issn?.join(", ") || "",
+            year: bib.year || "",
+            doi: bib.identifier?.find(id=>id.type==="doi")?.id || "",
+            articleUrl: bib.link?.[0]?.url || ""
+          };
+
+          allResults.push(articleData);
+        });
+
+      } else {
+
+        // ===== OTHER DATABASES =====
+        (source.data || []).forEach(item=>{
+          articleCount++;
+
+          const articleData = {
+            number: articleCount,
+            source: source.name,
+            title: item.title || item.title?.[0] || "No Title",
+            authors: item.authors || 
+                     item.author?.map(a=>a.given+" "+a.family).join(", ") || "N/A",
+            journal: item.journal || 
+                     item['container-title']?.[0] || "N/A",
+            volume: item.volume || "",
+            issue: item.issue || "",
+            issn: item.issn || item.ISSN?.join(", ") || "",
+            year: item.year || item.publication_year || 
+                  item.created?.["date-parts"]?.[0]?.[0] || "",
+            doi: item.doi || item.DOI || "",
+            articleUrl: item.link || item.url || 
+                        (item.DOI ? `https://doi.org/${item.DOI}` : "")
+          };
+
+          allResults.push(articleData);
+        });
+
+      }
+
     });
 
     if(currentSort !== "default"){
@@ -459,8 +494,11 @@ async function loadResults(reset = false){
 }
 
 
-// 🔹 Render Cards
+// =======================
+// RENDER ALL RESULTS
+// =======================
 function renderAllResults(){
+
   const resultDiv = document.getElementById("journalResults");
   resultDiv.innerHTML = "";
 
@@ -471,13 +509,16 @@ function renderAllResults(){
 }
 
 
-// 🔹 Card Template
+// =======================
+// CARD TEMPLATE
+// =======================
 function renderCard(data){
 
-  let readLink = "";
+  let cleanDoi = data.doi?.replace(/^https?:\/\/doi\.org\//,'') || "";
 
-  if(data.doi){
-    readLink = "https://doi.org/" + data.doi.replace(/^https?:\/\/doi\.org\//,'');
+  let readLink = "";
+  if(cleanDoi){
+    readLink = "https://doi.org/" + cleanDoi;
   } else if(data.articleUrl){
     readLink = data.articleUrl;
   }
@@ -501,11 +542,11 @@ function renderCard(data){
     <div class="result-meta"><strong>ISSN:</strong> ${data.issn || "N/A"}</div>
     <div class="result-meta"><strong>Year:</strong> ${data.year || "N/A"}</div>
 
-    ${data.doi ? `
+    ${cleanDoi ? `
       <div class="result-meta">
         <strong>DOI:</strong>
-        <a href="https://doi.org/${data.doi}" target="_blank">
-          ${data.doi}
+        <a href="https://doi.org/${cleanDoi}" target="_blank">
+          ${cleanDoi}
         </a>
       </div>
     ` : ""}
@@ -520,7 +561,9 @@ function renderCard(data){
 }
 
 
-// 🔹 Sorting
+// =======================
+// SORTING
+// =======================
 function sortResults(type){
 
   currentSort = type;
@@ -541,7 +584,9 @@ function sortResults(type){
 }
 
 
-// 🔹 Pagination
+// =======================
+// PAGINATION
+// =======================
 function renderPagination(){
 
   const paginationDiv = document.getElementById("pagination");
@@ -572,7 +617,9 @@ function renderPagination(){
 }
 
 
-// 🔹 Page Change
+// =======================
+// PAGE CHANGE
+// =======================
 function changePage(page){
 
   if(page < 1 || page > totalPages) return;
@@ -585,13 +632,17 @@ function changePage(page){
 }
 
 
-// 🔹 Sort Dropdown Listener
+// =======================
+// SORT DROPDOWN
+// =======================
 document.getElementById("sortSelect").addEventListener("change", function(){
   sortResults(this.value);
 });
 
 
-// 🔹 Initial Load
+// =======================
+// INITIAL LOAD
+// =======================
 loadResults(true);
 
 </script>
@@ -627,6 +678,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
