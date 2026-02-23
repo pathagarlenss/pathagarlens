@@ -318,12 +318,6 @@ a{
   </form>
 </div>
 
-<div id="searchInfo" style="
-  text-align:center;
-  font-weight:600;
-  margin-bottom:20px;
-  font-size:16px;">
-</div>
   
 <!-- Results -->
 <div class="results-container">
@@ -406,46 +400,38 @@ function shuffleArray(array){
 
 // =======================
 // LOAD RESULTS
-// =======================
-const urlParams = new URLSearchParams(window.location.search);
-const query = urlParams.get("q");
-
-if(!query) return;
-
-// 🔹 Show what user searched
-const infoBox = document.getElementById("searchInfo");
-if(infoBox){
-  infoBox.innerHTML =
-    `Showing results for: "<span style="color:#0a2a66">${query}</span>"`;
-}
-
-// 🔹 Keep search text in input box
 const searchInput = document.querySelector('input[name="q"]');
 if(searchInput){
   searchInput.value = query;
 }
 
-showLoading(true);
+async function loadResults(){
 
-try{
+  showLoading(true);
 
-  const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
-  const data = await response.json();
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
+  if(!query) return;
 
-  currentResults = data.results || [];
+  document.getElementById("searchInfo").innerHTML =
+  `Showing results for: "<span style="color:#0a2a66">${query}</span>"`;
 
-  applySort();
-  renderResults();
-  renderPagination();
+  try{
+    const response = await fetch(`/api/search?q=${query}&page=${currentPage}`);
+    const data = await response.json();
 
-}catch(err){
+    currentResults = data.results || [];
 
-  console.error("Fetch error:", err);
+    applySort();
+    renderResults();
+    renderPagination();
 
-}finally{
+  }catch(err){
+    console.error("Fetch error:", err);
+  }
 
   showLoading(false);
-
 }
 
 // =======================
@@ -641,6 +627,7 @@ topArrow.addEventListener("click", () => {
   
 </body>
 </html>
+
 
 
 
