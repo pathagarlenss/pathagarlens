@@ -10,6 +10,7 @@ export default async function handler(req, res) {
 let epmcData = {};
 let dcData = {};
 let zenData = {};
+  let doajData = {};
 
   try {
 
@@ -119,7 +120,7 @@ try {
     `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${q}&retmax=10&retstart=${offset}&retmode=json`
   );
 
-  const searchData = await searchRes.json();
+  searchData = await searchRes.json();
   const ids = searchData?.esearchresult?.idlist || [];
 
   if(ids.length > 0){
@@ -155,7 +156,7 @@ let europepmc = [];
 
 try {
 
-  const epmcRes = await fetch(
+  epmcRes = await fetch(
     `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${q}&format=json&pageSize=10&page=${page}`
   );
 
@@ -191,7 +192,7 @@ try {
     `https://api.datacite.org/dois?query=${q}&page[size]=10&page[number]=${page}`
   );
 
-  const dcData = await dcRes.json();
+  dcData = await dcRes.json();
 
   const results = dcData?.data || [];
 
@@ -219,7 +220,7 @@ let zenodo = [];
 
 try {
 
-  const zenRes = await fetch(
+  zenRes = await fetch(
     `https://zenodo.org/api/records?q=${q}&size=10&page=${page}`
   );
 
@@ -277,7 +278,7 @@ const openalexTotal = openalex?.meta?.count || 0;
 
 const semanticTotal = semantic?.total || 0;
 
-const doajTotal = doaj?.length || 0;  
+const doajTotal = doajData?.length || 0;  
 // DOAJ official total API থেকে আলাদা আসে না, তাই page count
 
 const pubmedTotal = searchData?.esearchresult?.count || 0;
@@ -300,17 +301,36 @@ const grandTotal =
   Number(europepmcTotal) +
   Number(dataciteTotal) +
   Number(zenodoTotal);
+
+    function exactFirst(arr){
+  const queryLower = q.toLowerCase().trim();
+
+  return arr.sort((a,b)=>{
+    const aExact = a.title?.toLowerCase().trim() === queryLower;
+    const bExact = b.title?.toLowerCase().trim() === queryLower;
+
+    if(aExact && !bExact) return -1;
+    if(!aExact && bExact) return 1;
+    return 0;
+  });
+}
     
    res.status(200).json({
-  crossref: removeDuplicate(crossref?.message?.items || []),
-  openalex: removeDuplicate(openalex?.results || []).map(item => ({
-  ...item,
-  link: item.doi
-    ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
-    : item.primary_location?.landing_page_url
-      ? item.primary_location.landing_page_url
-      : item.id
-})),
+  crossref: exactFirst(
+  removeDuplicate(crossref?.message?.items || [])
+),
+     
+openalex: exactFirst(
+  removeDuplicate(openalex?.results || []).map(item => ({
+    ...item,
+    link: item.doi
+      ? `https://doi.org/${item.doi.replace(/^https?:\/\/doi\.org\//,'')}`
+      : item.primary_location?.landing_page_url
+        ? item.primary_location.landing_page_url
+        : item.id
+  }))
+),
+     
   semantic: removeDuplicate(semantic?.data || []),
   doaj: removeDuplicate(doaj || []),
   arxiv: removeDuplicate(arxiv || []),
